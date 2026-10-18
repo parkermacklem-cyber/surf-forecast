@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SWELL — Global Surf Forecast</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#07131e;color:white;font-family:Arial,sans-serif}
+header{padding:22px 5%;border-bottom:1px solid #25404e;display:flex;justify-content:space-between}
+.logo{font-size:30px;font-weight:900;color:#40e1ef;letter-spacing:3px}
+main{max-width:1350px;margin:auto;padding:25px}
+.hero{padding:35px 0}
+h1{font-size:clamp(32px,5vw,60px);margin:10px 0}
+h1 span,.accent{color:#40e1ef}
+p,small{color:#9bb3c2}
+.controls{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}
+input,select,button{padding:14px;border-radius:10px;border:1px solid #294654;font-size:14px}
+input,select{background:#112634;color:white}
+input{flex:1;min-width:190px}
+button{background:#40e1ef;color:#061722;font-weight:bold;cursor:pointer}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.panel{background:#102432;border:1px solid #294654;border-radius:16px;padding:20px;min-width:0}
+.full{grid-column:1/-1}
+#map{height:430px;border-radius:12px;z-index:1}
+#spots{height:430px;overflow:auto}
+.spot{padding:16px;border-bottom:1px solid #294654;cursor:pointer;display:flex;justify-content:space-between}
+.spot:hover,.active{background:#1d4050}
+.spot strong{display:block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat,.day{background:#173343;border-radius:12px;padding:18px}
+.stat small{display:block;margin-bottom:12px}
+.stat strong{font-size:25px}
+.forecast{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));gap:10px;overflow-x:auto}
+.day{text-align:center}
+.day strong{display:block;font-size:22px;margin:14px 0}
+footer{text-align:center;padding:30px;color:#9bb3c2;font-size:12px}
+@media(max-width:800px){
+.layout{grid-template-columns:1fr}
+.stats{grid-template-columns:repeat(2,1fr)}
+#map{height:320px}
+}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">SWELL.</div>
+<small>GLOBAL SURF INTELLIGENCE</small>
+</header>
+<main>
+<section class="hero">
+<small class="accent">THE OCEAN, DECODED</small>
+<h1>Find your next <span>perfect wave.</span></h1>
+<p>Explore worldwide surf spots, real ocean forecasts, wind, swell and wave conditions.</p>
+</section>
+<div class="controls">
+<input id="search" placeholder="Search surf spots or countries...">
+<select id="region">
+<option value="all">All regions</option>
+<option>California</option>
+<option>Hawaii</option>
+<option>Australia</option>
+<option>Europe</option>
+<option>Asia</option>
+<option>Americas</option>
+<option>Africa</option>
+</select>
+<button id="favoritesBtn">☆ Favorites</button>
+</div>
+<div class="layout">
+<section class="panel">
+<h2>Explore the world</h2>
+<div id="map"></div>
+</section>
+<section class="panel">
+<h2>Surf spots</h2>
+<small id="count"></small>
+<div id="spots"></div>
+</section>
+<section class="panel full">
+<small>SELECTED SURF BREAK</small>
+<h2 id="name">Loading...</h2>
+<p id="location"></p>
+<button id="save">☆ Save spot</button>
+<p id="status">Connecting to forecast...</p>
+<div class="stats">
+<div class="stat"><small>Wave height</small><strong id="wave">--</strong></div>
+<div class="stat"><small>Swell period</small><strong id="period">--</strong></div>
+<div class="stat"><small>Wind speed</small><strong id="wind">--</strong></div>
+<div class="stat"><small>Surf score</small><strong id="score">--</strong></div>
+</div>
+<p id="details"></p>
+</section>
+<section class="panel full">
+<h2>7-Day Forecast</h2>
+<div class="forecast" id="forecast"></div>
+</section>
+</div>
+</main>
+<footer>SWELL © 2026 | Forecast data: Open-Meteo | Surf scores are experimental estimates.</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const spots=[
+["Manhattan Beach","California","USA",33.8847,-118.4109],
+["El Porto","California","USA",33.9007,-118.4214],
+["Malibu","California","USA",34.0333,-118.6787],
+["Huntington Beach","California","USA",33.6553,-118.0034],
+["Trestles","California","USA",33.384,-117.593],
+["Mavericks","California","USA",37.494,-122.501],
+["Pipeline","Hawaii","USA",21.665,-158.053],
+["Waikiki","Hawaii","USA",21.276,-157.827],
+["Jaws","Hawaii","USA",20.942,-156.3],
+["Snapper Rocks","Australia","Australia",-28.164,153.55],
+["Bells Beach","Australia","Australia",-38.369,144.283],
+["Bondi Beach","Australia","Australia",-33.891,151.277],
+["Nazaré","Europe","Portugal",39.602,-9.071],
+["Supertubos","Europe","Portugal",39.343,-9.362],
+["Hossegor","Europe","France",43.664,-1.444],
+["Uluwatu","Asia","Indonesia",-8.816,115.088],
+["Padang Padang","Asia","Indonesia",-8.811,115.103],
+["Cloud 9","Asia","Philippines",9.813,126.165],
+["Jeffreys Bay","Africa","South Africa",-34.05,24.93],
+["Puerto Escondido","Americas","Mexico",15.851,-97.06],
+["Pavones","Americas","Costa Rica",8.389,-83.136]
+];
+const $=id=>document.getElementById(id);
+const map=L.map("map").setView([15,-105],3);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+attribution:"© OpenStreetMap contributors"
+}).addTo(map);
+let selected=0,request=0,onlyFavorites=false;
+let favorites=new Set(JSON.parse(localStorage.getItem("swellFavorites")||"[]"));
+const markers=spots.map((s,i)=>{
+const marker=L.marker([s[3],s[4]]).addTo(map);
+marker.bindPopup(s[0]);
+marker.on("click",()=>load(i));
+return marker;
+});
+function render(){
+$("spots").innerHTML="";
+let count=0;
+spots.forEach((s,i)=>{
+if($("region").value!=="all"&&s[1]!==$("region").value)return;
+if(onlyFavorites&&!favorites.has(s[0]))return;
+if(!(s[0]+" "+s[1]+" "+s[2]).toLowerCase().includes($("search").value.toLowerCase()))return;
+count++;
+const div=document.createElement("div");
+div.className="spot"+(i===selected?" active":"");
+const info=document.createElement("div");
+const title=document.createElement("strong");
+title.textContent=s[0];
+const sub=document.createElement("small");
+sub.textContent=s[1]+", "+s[2];
+info.append(title,sub);
+const star=document.createElement("span");
+star.textContent=favorites.has(s[0])?"★":"→";
+star.className="accent";
+div.append(info,star);
+div.onclick=()=>load(i);
+$("spots").append(div);
+});
+$("count").textContent=count+" locations";
+}
+$("search").oninput=render;
+$("region").onchange=render;
+$("favoritesBtn").onclick=()=>{
+onlyFavorites=!onlyFavorites;
+$("favoritesBtn").textContent=onlyFavorites?"★ All spots":"☆ Favorites";
+render();
+};
+$("save").onclick=()=>{
+const name=spots[selected][0];
+if(favorites.has(name))favorites.delete(name);
+else favorites.add(name);
+localStorage.setItem("swellFavorites",JSON.stringify([...favorites]));
+$("save").textContent=favorites.has(name)?"★ Saved":"☆ Save spot";
+render();
+};
+function score(h,p,w){
+if(h==null||p==null||w==null)return null;
+return Math.max(1,Math.min(10,Math.round(Math.min(h/2.5,1)*4+Math.min(p/16,1)*4+Math.max(0,2-w/8))));
+}
+function feet(m){return m==null?"--":(m*3.28084).toFixed(1)+" ft"}
+function direction(d){
+if(d==null)return "--";
+return ["N","NE","E","SE","S","SW","W","NW"][Math.round(d/45)%8];
+}
+async function load(i){
+selected=i;
+const id=++request;
+const s=spots[i];
+$("name").textContent=s[0];
+$("location").textContent=s[1]+", "+s[2];
+$("save").textContent=favorites.has(s[0])?"★ Saved":"☆ Save spot";
+$("status").textContent="Loading marine forecast...";
+["wave","period","wind","score"].forEach(k=>$(k).textContent="--");
+$("details").textContent="";
+$("forecast").innerHTML="";
+render();
+map.setView([s[3],s[4]],9);
+markers[i].openPopup();
+try{
+const marine="https://marine-api.open-meteo.com/v1/marine?"+new URLSearchParams({
+latitude:s[3],longitude:s[4],
+hourly:"wave_height,wave_direction,wave_period,swell_wave_period,swell_wave_direction",
+forecast_days:7,timezone:"auto"
+});
+const weather="https://api.open-meteo.com/v1/forecast?"+new URLSearchParams({
+latitude:s[3],longitude:s[4],
+hourly:"wind_speed_10m",
+wind_speed_unit:"kmh",forecast_days:7,timezone:"auto"
+});
+const responses=await Promise.all([fetch(marine),fetch(weather)]);
+if(!responses.every(r=>r.ok))throw Error("API unavailable");
+const [m,w]=await Promise.all(responses.map(r=>r.json()));
+if(id!==request)return;
+const times=m.hourly.time;
+const local=new Intl.DateTimeFormat("sv-SE",{
+timeZone:m.timezone,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",hourCycle:"h23"
+}).format(new Date()).replace(" ","T");
+let n=times.findIndex(t=>t>=local);
+if(n<0)n=times.length-1;
+const h=m.hourly.wave_height?.[n];
+const p=m.hourly.swell_wave_period?.[n]??m.hourly.wave_period?.[n];
+const wi=w.hourly.time.indexOf(times[n]);
+const wind=wi<0?null:w.hourly.wind_speed_10m?.[wi];
+const mph=wind==null?null:Math.round(wind*.621371);
+const rating=score(h,p,mph);
+$("wave").textContent=feet(h);
+$("period").textContent=p==null?"--":p+" s";
+$("wind").textContent=mph==null?"--":mph+" mph";
+$("score").textContent=rating==null?"--":rating+"/10";
+$("details").textContent="Wave direction: "+direction(m.hourly.wave_direction?.[n])+" | Swell direction: "+direction(m.hourly.swell_wave_direction?.[n]);
+$("status").textContent="Forecast loaded — model estimates, not live observations.";
+const days=[...new Set(times.map(t=>t.slice(0,10)))];
+days.forEach(date=>{
+let j=times.indexOf(date+"T12:00");
+if(j<0)j=times.findIndex(t=>t.startsWith(date));
+if(j<0)return;
+const height=m.hourly.wave_height?.[j];
+const period=m.hourly.swell_wave_period?.[j]??m.hourly.wave_period?.[j];
+const k=w.hourly.time.indexOf(times[j]);
+const speed=k<0?null:w.hourly.wind_speed_10m?.[k];
+const windMph=speed==null?null:Math.round(speed*.621371);
+const rating=score(height,period,windMph);
+const card=document.createElement("div");
+card.className="day";
+const label=document.createElement("small");
+label.textContent=new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"});
+const wave=document.createElement("strong");
+wave.textContent=feet(height);
+const periodText=document.createElement("p");
+periodText.textContent=period==null?"--":period+"s period";
+const windText=document.createElement("small");
+windText.textContent=windMph==null?"--":windMph+" mph wind";
+const scoreText=document.createElement("p");
+scoreText.className="accent";
+scoreText.textContent=rating==null?"No score":rating+"/10 score";
+card.append(label,wave,periodText,windText,scoreText);
+$("forecast").append(card);
+});
+}catch(e){
+if(id!==request)return;
+$("status").textContent="Forecast unavailable. Try another spot.";
+console.error(e);
+}
+}
+render();
+load(0);
+</script>
+</body>
+</html>
