@@ -1444,7 +1444,8 @@ async function loadForecast(){
       const getWeather=key=>
         wi===undefined?null:(wh[key]?.[wi]??null);
 
-      const height=mh.wave_height?.[i]??null;
+      const height = mh.wave_height?.[i] ?? null;
+      const breakingHeight = height === null ? null : heght * 1.15; 
 
       const period=mh.swell_wave_period?.[i]
         ??mh.wave_period?.[i]??null;
@@ -1454,7 +1455,9 @@ async function loadForecast(){
       return{
         time,
         height,
+        breakingHeight,
         period,
+        
         wavePeriod:mh.wave_period?.[i]??null,
         swellDirection:mh.swell_wave_direction?.[i]??null,
         water:mh.sea_surface_temperature?.[i]??null,
@@ -1555,11 +1558,11 @@ function renderForecast(){
   const daily=forecast.daily;
 
   const score=row.score;
-  const board=recommendBoard(row.height);
+ 
 
   // HOME
 
-  $("homeWave").textContent=waveRange(row.height);
+  $("homeWave").textContent=waveRange(row.breakingHeight);
   $("homeWater").textContent=temperature(row.water);
   $("homeWind").textContent=windFormat(row.wind);
   $("homePeriod").textContent=row.period==null?"--":Math.round(row.period)+" sec";
