@@ -1386,7 +1386,8 @@ async function loadForecast(){
       "sea_surface_temperature"
     ].join(","),
     forecast_days:7,
-    timezone:"auto"
+    timezone:"auto",
+    models:"ncep_gfswave025
   });
 
   const weatherURL=new URL("https://api.open-meteo.com/v1/forecast");
