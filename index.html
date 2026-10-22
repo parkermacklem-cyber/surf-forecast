@@ -3,1663 +3,1161 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#080d12">
-<title>SWELL — Surf Intelligence</title>
-<meta name="description" content="Explore surf spots, marine forecasts, swell, wind and ocean conditions with SWELL.">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101112">
+<title>SWELL — Ocean Intelligence</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
 <style>
 :root {
-  --bg:#f5f6f6;
-  --surface:#fff;
-  --surface2:#eef1f2;
-  --text:#10191e;
-  --muted:#718087;
-  --line:#e2e7e9;
-  --accent:#0a8490;
-  --accentSoft:#e3f4f4;
-  --shadow:0 12px 40px rgba(10,25,30,.045);
-  --radius:18px;
+  --bg:#f6f7f7;
+  --card:#fff;
+  --ink:#111416;
+  --muted:#777f84;
+  --line:#e2e6e7;
+  --sub:#f0f2f2;
 }
-
 body.dark {
-  --bg:#090e12;
-  --surface:#121b21;
-  --surface2:#1a272f;
-  --text:#f2f6f7;
-  --muted:#96a7b0;
-  --line:#293740;
-  --accent:#61d7db;
-  --accentSoft:#17353a;
-  --shadow:none;
+  --bg:#101214;
+  --card:#1b1e20;
+  --ink:#f5f6f6;
+  --muted:#a0a7ab;
+  --line:#363b3e;
+  --sub:#272b2e;
 }
-
-* { box-sizing:border-box; }
-html { scroll-behavior:smooth; }
-body {
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"DM Sans",sans-serif;
-  transition:background .2s,color .2s;
-}
-button,input,select { font:inherit; }
-button { cursor:pointer; }
-button:disabled { opacity:.55;cursor:not-allowed; }
-a { color:inherit;text-decoration:none; }
-h1,h2,h3,h4 {
-  font-family:"Space Grotesk",sans-serif;
-  letter-spacing:-.055em;
-}
-h1 { font-size:clamp(38px,5vw,66px);line-height:1.05; }
-h2 { font-size:27px; }
-p { line-height:1.65; }
-::selection { background:var(--accent);color:white; }
-
-.shell { max-width:1450px;margin:auto;padding:0 28px; }
-
-.site-header {
-  position:sticky;
-  top:0;
-  z-index:1000;
-  background:var(--surface);
-  border-bottom:1px solid var(--line);
-}
-.header-inner {
-  height:76px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:20px;
-}
-.logo {
-  font-family:"Space Grotesk",sans-serif;
-  font-size:30px;
-  font-weight:800;
-  letter-spacing:-2px;
-  white-space:nowrap;
-}
-.logo span { color:var(--accent); }
-.navigation { display:flex;align-items:center;gap:4px; }
-.nav-btn {
-  border:0;
-  background:transparent;
-  color:var(--muted);
-  padding:12px 16px;
-  border-radius:10px;
-  font-weight:800;
-  font-size:13px;
-  transition:.2s;
-}
-.nav-btn:hover { color:var(--text);background:var(--surface2); }
-.nav-btn.active { background:var(--accentSoft);color:var(--accent); }
-.header-actions { display:flex;align-items:center;gap:10px; }
-.icon-button {
-  width:43px;
-  height:43px;
-  border:1px solid var(--line);
-  background:var(--surface);
-  color:var(--text);
-  border-radius:12px;
-  font-size:20px;
-}
-
-main { padding-top:26px!important;padding-bottom:70px!important; }
-.page { display:none;animation:fadeIn .2s ease; }
-.page.active { display:block; }
-@keyframes fadeIn {
-  from { opacity:.5;transform:translateY(5px); }
-  to { opacity:1;transform:translateY(0); }
-}
-
-.eyebrow {
-  font-size:11px;
-  font-weight:800;
-  letter-spacing:2px;
-  text-transform:uppercase;
-  color:var(--accent);
-}
-.muted { color:var(--muted); }
-.small { font-size:12px;color:var(--muted); }
-.flex { display:flex;align-items:center;gap:12px; }
-.between { display:flex;justify-content:space-between;align-items:center;gap:15px; }
-.wrap { flex-wrap:wrap; }
-.section-heading {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:20px;
-  margin:38px 0 17px;
-}
-.section-heading h2 { margin:0; }
-.section-heading p { margin:5px 0 0; }
-.btn {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:9px;
-  border:0;
-  border-radius:11px;
-  padding:13px 19px;
-  font-size:13px;
-  font-weight:800;
-  transition:transform .2s,opacity .2s;
-}
-.btn:hover { transform:translateY(-1px); }
-.btn-primary { background:var(--text);color:var(--bg); }
-.btn-accent { background:var(--accent);color:white; }
-.btn-outline {
-  background:var(--surface);
-  color:var(--text);
-  border:1px solid var(--line);
-}
-.btn-ghost { background:var(--surface2);color:var(--text); }
-.btn-small { padding:9px 12px;font-size:12px; }
-
-.card {
-  background:var(--surface);
-  border:1px solid var(--line);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-}
-.card-pad { padding:24px; }
-
-.hero {
-  position:relative;
-  min-height:465px;
-  border-radius:24px;
-  overflow:hidden;
-  display:flex;
-  align-items:center;
-  background:
-    linear-gradient(90deg,rgba(3,15,23,.94),rgba(3,15,23,.62) 47%,rgba(3,15,23,.1)),
-    url("https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=2000&auto=format&fit=crop") center/cover;
-  color:white;
-}
-.hero-content {
-  padding:65px;
-  max-width:720px;
-  position:relative;
-  z-index:1;
-}
-.hero h1 { font-size:clamp(47px,6vw,86px);margin:15px 0 20px; }
-.hero p { max-width:510px;color:#c6d7de;font-size:15px; }
-.hero .eyebrow { color:#6ce1e2; }
-.hero-actions { display:flex;gap:12px;margin-top:26px;flex-wrap:wrap; }
-.hero .btn-primary { background:white;color:#10191e; }
-.hero-tag {
-  position:absolute;
-  right:25px;
-  bottom:25px;
-  border:1px solid #ffffff55;
-  background:#06182177;
-  backdrop-filter:blur(10px);
-  padding:12px 16px;
-  border-radius:11px;
-  color:#e8f4f7;
-  font-size:12px;
-}
-
-.dashboard-grid {
-  display:grid;
-  grid-template-columns:1.45fr 1fr;
-  gap:18px;
-}
-.current-card { padding:27px; }
-.current-card h2 { margin:8px 0 5px;font-size:32px; }
-.metric-grid {
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:13px;
-}
-.metric {
-  background:var(--surface2);
-  border-radius:13px;
-  padding:17px;
-  min-width:0;
-}
-.metric-label {
-  font-size:10px;
-  color:var(--muted);
-  text-transform:uppercase;
-  letter-spacing:1.2px;
-  font-weight:800;
-}
-.metric-value {
-  font-family:"Space Grotesk";
-  font-size:clamp(20px,2.4vw,32px);
-  font-weight:800;
-  margin:11px 0 5px;
-  letter-spacing:-1px;
-}
-.metric-note { font-size:11px;color:var(--muted);line-height:1.4; }
-.summary-panel {
-  background:var(--accentSoft);
-  border-radius:12px;
-  padding:17px;
-  font-size:13px;
-  line-height:1.7;
-  margin-top:18px;
-}
-.summary-panel strong { color:var(--accent); }
-.data-line {
-  font-size:11px;
-  color:var(--muted);
-  margin-top:14px;
-  line-height:1.6;
-}
-
-.stat-panel { padding:26px; }
-.stat-panel h3 { margin:8px 0 12px;font-size:24px; }
-.stat-list { display:grid;gap:15px;margin-top:22px; }
-.stat-item {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding-bottom:13px;
-  border-bottom:1px solid var(--line);
-  font-size:13px;
-}
-.stat-item:last-child { border:0; }
-.stat-item strong { font-size:15px; }
-
-.spot-grid {
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:18px;
-}
-.spot-card {
-  overflow:hidden;
-  transition:transform .2s,border-color .2s;
-}
-.spot-card:hover { transform:translateY(-4px);border-color:var(--accent); }
-.spot-photo {
-  height:175px;
-  background:
-    linear-gradient(180deg,transparent,#071a2940),
-    url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=850&auto=format&fit=crop") center/cover;
-  position:relative;
-}
-.spot-photo.photo2 {
-  background-image:linear-gradient(180deg,transparent,#071a2940),
-  url("https://images.unsplash.com/photo-1455729552865-3658a5d7f2f6?w=850&auto=format&fit=crop");
-}
-.spot-photo.photo3 {
-  background-image:linear-gradient(180deg,transparent,#071a2940),
-  url("https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=850&auto=format&fit=crop");
-}
-.photo-badge {
-  position:absolute;
-  left:14px;
-  top:14px;
-  background:#061923bd;
-  color:white;
-  border:1px solid #ffffff40;
-  border-radius:20px;
-  padding:6px 10px;
-  font-size:10px;
-  font-weight:800;
-}
-.spot-body { padding:19px; }
-.spot-body h3 { font-size:20px;margin:0 0 6px; }
-.spot-body p { font-size:12px;margin:0;color:var(--muted); }
-.spot-footer {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  margin-top:19px;
-}
-.spot-actions { display:flex;gap:7px; }
-.favorite-icon {
-  width:36px;
-  height:36px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:var(--surface2);
-  color:var(--accent);
-  font-size:19px;
-}
-.favorite-icon.saved { background:var(--accentSoft); }
-
-.page-title { margin:12px 0 8px; }
-.page-intro { max-width:750px;margin-bottom:24px; }
-.toolbar {
-  display:flex;
-  gap:12px;
-  margin:24px 0 19px;
-}
-.input,select {
-  background:var(--surface);
-  border:1px solid var(--line);
-  color:var(--text);
-  border-radius:12px;
-  padding:14px 16px;
-  outline:none;
-}
-.input:focus,select:focus { border-color:var(--accent); }
-.toolbar .input { flex:1;min-width:0; }
-.toolbar select { min-width:190px; }
-
-.map-container {
-  overflow:hidden;
-  padding:8px;
-}
-#map {
-  width:100%;
-  height:470px;
-  border-radius:12px;
-  background:var(--surface2);
-}
-.map-error { padding:30px;text-align:center;color:var(--muted); }
-.leaflet-popup-content-wrapper { border-radius:12px; }
-.map-popup { font-family:"DM Sans",sans-serif;min-width:140px; }
-.map-popup strong { font-size:14px; }
-.map-popup p { font-size:11px;color:#718087;margin:6px 0 10px; }
-.map-popup button {
-  background:#0a8490;
-  color:white;
-  border:0;
-  border-radius:7px;
-  padding:8px 12px;
-  font-size:12px;
-  font-weight:800;
-}
-
-.forecast-heading {
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-end;
-  gap:20px;
-  margin-bottom:25px;
-}
-.forecast-heading h1 { margin:10px 0 7px; }
-.forecast-heading p { margin:0; }
-.forecast-actions { display:flex;gap:9px;flex-wrap:wrap; }
-.forecast-metrics { margin-bottom:12px; }
-.chart-card { padding:24px;margin-bottom:17px; }
-.chart-card h3 { margin:0 0 7px;font-size:21px; }
-.chart-container { height:290px;position:relative;margin-top:18px; }
-.chart-container canvas { width:100%!important;height:100%!important; }
-.chart-fallback { padding:20px;color:var(--muted); }
-.forecast-columns {
-  display:grid;
-  grid-template-columns:1.4fr 1fr;
-  gap:17px;
-}
-.info-list { margin-top:17px; }
-.info-list .stat-item { padding:13px 0; }
-.note {
-  background:var(--accentSoft);
-  border-radius:13px;
-  padding:18px;
-  line-height:1.8;
-  font-size:13px;
-}
-.note h4 { margin:0 0 8px;font-size:16px; }
-
-.table-wrap {
-  width:100%;
-  overflow:auto;
-  border:1px solid var(--line);
-  border-radius:14px;
-  margin-top:17px;
-}
-table { width:100%;border-collapse:collapse;white-space:nowrap; }
-th,td {
-  text-align:left;
-  padding:14px 17px;
-  border-bottom:1px solid var(--line);
-  font-size:12px;
-}
-th {
-  background:var(--surface2);
-  color:var(--muted);
-  text-transform:uppercase;
-  font-size:10px;
-  letter-spacing:1px;
-}
-tr:last-child td { border-bottom:0; }
-tbody tr:hover { background:var(--surface2); }
-
-.favorite-list { padding:5px 22px; }
-.favorite-row {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:15px;
-  padding:19px 0;
-  border-bottom:1px solid var(--line);
-}
-.favorite-row:last-child { border:0; }
-.favorite-row strong { font-size:16px; }
-.favorite-row p { margin:4px 0 0;font-size:12px;color:var(--muted); }
-.empty-state { padding:45px 20px;text-align:center;color:var(--muted); }
-.empty-state h3 { color:var(--text); }
-
-.settings-list { padding:5px 24px; }
-.setting {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:20px;
-  padding:24px 0;
-  border-bottom:1px solid var(--line);
-}
-.setting:last-child { border:0; }
-.setting strong { font-size:15px; }
-.setting p { font-size:12px;color:var(--muted);margin:5px 0 0; }
-.setting select { min-width:150px; }
-
-.status-dot {
-  display:inline-block;
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  background:var(--accent);
-  margin-right:7px;
-}
-.footer {
-  border-top:1px solid var(--line);
-  padding:28px;
-  color:var(--muted);
-  font-size:12px;
-}
-.footer-inner {
-  max-width:1450px;
-  margin:auto;
-  display:flex;
-  justify-content:space-between;
-  gap:15px;
-  flex-wrap:wrap;
-}
-.toast {
-  position:fixed;
-  bottom:24px;
-  left:50%;
-  transform:translateX(-50%) translateY(20px);
-  background:var(--text);
-  color:var(--bg);
-  padding:12px 20px;
-  border-radius:12px;
-  font-size:13px;
-  font-weight:700;
-  opacity:0;
-  pointer-events:none;
-  transition:.25s;
-  z-index:2000;
-  max-width:90vw;
-  text-align:center;
-}
-.toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
-
-@media(max-width:1100px) {
-  .dashboard-grid,.forecast-columns { grid-template-columns:1fr; }
-  .metric-grid { grid-template-columns:repeat(2,1fr); }
-  .spot-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-}
-@media(max-width:760px) {
-  .shell { padding-left:15px;padding-right:15px; }
-  .header-inner { height:auto;min-height:65px;flex-wrap:wrap;padding-top:12px;padding-bottom:9px; }
-  .navigation { order:3;width:100%;overflow-x:auto;padding-bottom:5px; }
-  .nav-btn { white-space:nowrap;padding:10px 12px;font-size:12px; }
-  .logo { font-size:26px; }
-  .hero { min-height:410px; }
-  .hero-content { padding:29px; }
-  .hero h1 { font-size:51px; }
-  .hero-tag { display:none; }
-  .spot-grid { grid-template-columns:1fr; }
-  .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .metric { padding:14px; }
-  .metric-value { font-size:25px; }
-  .forecast-heading { align-items:flex-start;flex-direction:column; }
-  .toolbar { flex-direction:column; }
-  .toolbar select { width:100%; }
-  #map { height:350px; }
-  .section-heading { align-items:flex-start; }
-  .section-heading h2 { font-size:23px; }
-  .card-pad,.current-card,.stat-panel,.chart-card { padding:18px; }
-  .setting { align-items:flex-start;flex-direction:column; }
-  .setting select { width:100%; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"DM Sans",sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+h1,h2,h3,.brand,.big{font-family:"Space Grotesk",sans-serif;letter-spacing:-.05em}
+h1{font-size:clamp(38px,5vw,65px);line-height:1.05;margin:10px 0}
+h2{font-size:29px;margin:0}
+h3{font-size:20px;margin:0 0 10px}
+p{line-height:1.6}
+.wrap{max-width:1450px;margin:auto;padding:0 24px}
+.top{position:sticky;top:0;z-index:1000;background:var(--card);border-bottom:1px solid var(--line)}
+.topin{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.brand{font-size:30px;font-weight:800;letter-spacing:-2px}
+.brand span{color:var(--muted)}
+nav{display:flex;gap:4px}
+nav button{border:0;background:transparent;color:var(--muted);padding:12px 15px;border-radius:10px;font-size:13px;font-weight:800}
+nav button.active,nav button:hover{background:var(--sub);color:var(--ink)}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--bg);padding:12px 17px;border-radius:11px;font-size:13px;font-weight:800}
+.btn.alt{background:var(--card);color:var(--ink);border-color:var(--line)}
+.btn.small{padding:9px 12px}
+.page{display:none;padding:35px 0 70px}
+.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px}
+.pad{padding:24px}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:1.8px;font-weight:800;color:var(--muted)}
+.muted{color:var(--muted)}
+.tiny{font-size:12px;color:var(--muted)}
+.hero{background:var(--ink);color:var(--bg);border-radius:23px;padding:65px;min-height:320px;position:relative;overflow:hidden}
+.hero h1{font-size:clamp(45px,6vw,85px);max-width:850px}
+.hero p{max-width:570px;opacity:.7}
+.hero .btn{background:var(--bg);color:var(--ink);border-color:var(--bg)}
+.hero:after{content:"";position:absolute;width:350px;height:350px;right:-120px;top:-90px;border:1px solid #9997;border-radius:50%;box-shadow:0 0 0 50px #9992,0 0 0 100px #9992,0 0 0 150px #9992;pointer-events:none}
+.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:35px 0 17px}
+.grid{display:grid;gap:14px}
+.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.metric{padding:20px;min-width:0}
+.metric .big{font-size:clamp(22px,2.8vw,35px);font-weight:800;margin:13px 0 6px;overflow-wrap:anywhere}
+.feature{padding:22px;display:flex;flex-direction:column;gap:16px}
+.feature strong{font-size:21px;font-family:"Space Grotesk"}
+.feature .bottom{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.toolbar{display:flex;gap:10px;margin:25px 0 18px}
+.field{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:14px}
+.toolbar input{flex:1;min-width:0}
+.mapbox{padding:8px}
+#map{height:420px;border-radius:12px;background:var(--sub)}
+.forecasthead{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.status{font-size:12px;color:var(--muted);margin:16px 0}
+.chartcard{padding:24px;overflow:hidden}
+.charthead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.chartview{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:18px;touch-action:pan-x}
+.chartview::-webkit-scrollbar{height:9px}
+.chartview::-webkit-scrollbar-thumb{background:var(--muted);border-radius:10px}
+.plot{display:block;height:250px;cursor:crosshair}
+.readout{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:13px;font-size:13px}
+.readout strong{font-family:"Space Grotesk";font-size:20px}
+.slider{width:100%;margin:14px 0 0;accent-color:var(--ink)}
+.chartstack{display:grid;gap:17px}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;white-space:nowrap}
+th,td{text-align:left;padding:14px 17px;border-bottom:1px solid var(--line);font-size:12px}
+th{background:var(--sub);color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase}
+tr:last-child td{border-bottom:0}
+.note{padding:20px;font-size:13px;color:var(--muted);line-height:1.8}
+.savedrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:20px 0;border-bottom:1px solid var(--line)}
+.setting{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:23px 0;border-bottom:1px solid var(--line)}
+.footer{padding:30px 0;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+.toast{position:fixed;bottom:25px;left:50%;transform:translateX(-50%);padding:12px 20px;background:var(--ink);color:var(--bg);border-radius:12px;opacity:0;pointer-events:none;transition:.2s;z-index:2000}
+.toast.show{opacity:1}
+@media(max-width:1000px){.four{grid-template-columns:repeat(2,minmax(0,1fr))}.three{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){
+.wrap{padding:0 15px}
+.topin{flex-wrap:wrap;padding:12px 0;gap:8px}
+nav{order:3;width:100%;overflow:auto}
+nav button{white-space:nowrap;padding:10px}
+.hero{padding:30px;min-height:310px}
+.hero:after{right:-280px}
+.three,.two{grid-template-columns:1fr}
+.metric{padding:15px}
+.metric .big{font-size:26px}
+.toolbar{flex-direction:column}
+#map{height:320px}
+.chartcard{padding:15px}
+.setting{flex-direction:column;align-items:stretch}
 }
 </style>
 </head>
 
 <body>
-<header class="site-header">
-  <div class="shell header-inner">
-    <a class="logo" href="#home" id="logoLink">SWELL<span>.</span></a>
 
-    <nav class="navigation" aria-label="Main navigation">
-      <button class="nav-btn active" data-page="home">Home</button>
-      <button class="nav-btn" data-page="explore">Explore</button>
-      <button class="nav-btn" data-page="forecast">Forecast</button>
-      <button class="nav-btn" data-page="favorites">Favorites</button>
-      <button class="nav-btn" data-page="settings">Settings</button>
+<header class="top">
+  <div class="wrap topin">
+    <div class="brand">SWELL<span>.</span></div>
+    <nav>
+      <button data-go="home" class="active">Home</button>
+      <button data-go="forecast">Forecast</button>
+      <button data-go="explore">Explore</button>
+      <button data-go="favorites">Favorites</button>
+      <button data-go="settings">Settings</button>
     </nav>
-
-    <div class="header-actions">
-      <button class="icon-button" id="themeButton" aria-label="Toggle dark mode">◐</button>
-    </div>
+    <button class="btn alt small" id="themeBtn">◐</button>
   </div>
 </header>
 
-<main class="shell">
+<main class="wrap">
 
-<!-- HOME -->
 <section class="page active" id="home">
   <div class="hero">
-    <div class="hero-content">
-      <div class="eyebrow">Independent ocean intelligence</div>
-      <h1>Read the ocean.<br>Own the moment.</h1>
-      <p>Discover your next session with marine forecasts, swell information, wind models, and a coastline built to explore.</p>
-      <div class="hero-actions">
-        <button class="btn btn-primary" onclick="go('explore')">Explore surf spots ↗</button>
-        <button class="btn btn-outline" onclick="go('forecast')" style="background:#ffffff1a;color:white;border-color:#ffffff55">View forecast →</button>
-      </div>
-    </div>
-    <div class="hero-tag"><span class="status-dot"></span>Live model requests · Updated on demand</div>
+    <div class="eyebrow">SWELL / Ocean Intelligence</div>
+    <h1>Know the water.<br>Before you go.</h1>
+    <p>Powerful marine forecasting, interactive timelines, and detailed ocean conditions. Everything you need. Nothing you don't.</p>
+    <button class="btn" data-go="forecast">Explore forecast ↗</button>
   </div>
 
-  <div class="section-heading">
+  <div class="sectionhead">
     <div>
-      <div class="eyebrow">Your dashboard</div>
-      <h2>Ocean overview</h2>
+      <div class="eyebrow">Current conditions</div>
+      <h2 id="homeName">Manhattan Beach</h2>
     </div>
-    <button class="btn btn-outline" onclick="go('forecast')">Detailed forecast →</button>
+    <button class="btn alt small" data-go="explore">Change spot →</button>
   </div>
+  <div class="grid four" id="homeMetrics"></div>
 
-  <div class="dashboard-grid">
-    <div class="card current-card">
-      <div class="between wrap">
-        <div>
-          <div class="eyebrow">Selected surf spot</div>
-          <h2 id="homeSpotTitle">Manhattan Beach</h2>
-          <div class="small" id="homeSpotRegion">Southern California</div>
-        </div>
-        <button class="btn btn-small btn-ghost" onclick="go('explore')">Change spot ↗</button>
-      </div>
-
-      <div class="metric-grid" id="homeMetrics" style="margin-top:25px"></div>
-
-      <div class="summary-panel">
-        <strong>SWELL INSIGHT</strong>
-        <div id="homeInsight">Loading the latest model forecast...</div>
-      </div>
-      <div class="data-line" id="homeDataStatus">Connecting to forecast sources...</div>
-    </div>
-
-    <div class="card stat-panel">
-      <div class="eyebrow">The platform</div>
-      <h3>Your coastline.<br>Your intelligence.</h3>
-      <p class="muted" style="font-size:13px">Real marine and weather model data, accessible from a simple surf dashboard.</p>
-      <div class="stat-list">
-        <div class="stat-item"><span class="muted">Surf spot directory</span><strong id="totalSpotCount">46</strong></div>
-        <div class="stat-item"><span class="muted">Forecast window</span><strong>7 days</strong></div>
-        <div class="stat-item"><span class="muted">Saved spots</span><strong id="savedSpotCount">0</strong></div>
-        <div class="stat-item"><span class="muted">Model refresh checks</span><strong>30 min</strong></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section-heading">
+  <div class="sectionhead">
     <div>
       <div class="eyebrow">Discover</div>
       <h2>Explore the coastline</h2>
     </div>
-    <button class="btn btn-outline" onclick="go('explore')">View all spots →</button>
+    <button class="btn alt small" data-go="explore">All spots →</button>
   </div>
-  <div class="spot-grid" id="featuredSpots"></div>
+  <div class="grid three" id="featured"></div>
 </section>
 
-<!-- EXPLORE -->
-<section class="page" id="explore">
-  <div class="eyebrow">Discover the coastline</div>
-  <h1 class="page-title">Every break.<br>One place.</h1>
-  <p class="muted page-intro">Search across California, Hawaii, and the East Coast. Choose a spot to load its marine and wind forecasts.</p>
-
-  <div class="toolbar">
-    <input class="input" id="spotSearch" type="search" placeholder="Search surf spots, cities, regions..." aria-label="Search surf spots">
-    <select id="regionFilter" aria-label="Filter by region">
-      <option value="all">All regions</option>
-      <option value="Southern California">Southern California</option>
-      <option value="Central California">Central California</option>
-      <option value="Northern California">Northern California</option>
-      <option value="Hawaii">Hawaii</option>
-      <option value="East Coast">East Coast</option>
-    </select>
-  </div>
-
-  <div class="card map-container">
-    <div id="map"></div>
-  </div>
-
-  <div class="section-heading">
-    <div>
-      <h2>Surf spot directory</h2>
-      <p class="small" id="spotCount">Loading spots...</p>
-    </div>
-  </div>
-
-  <div class="spot-grid" id="allSpots"></div>
-</section>
-
-<!-- FORECAST -->
 <section class="page" id="forecast">
-  <div class="eyebrow">Ocean forecast center</div>
-
-  <div class="forecast-heading">
+  <div class="forecasthead">
     <div>
-      <h1 id="forecastTitle">Manhattan Beach</h1>
-      <p class="muted" id="forecastRegion">Southern California</p>
+      <div class="eyebrow">Detailed ocean forecast</div>
+      <h1 id="forecastName">Manhattan Beach</h1>
+      <div class="muted" id="forecastRegion">Southern California</div>
     </div>
-    <div class="forecast-actions">
-      <button class="btn btn-outline" id="favoriteButton">☆ Save spot</button>
-      <button class="btn btn-outline" onclick="go('explore')">Change spot</button>
-      <button class="btn btn-accent" id="refreshButton">↻ Refresh data</button>
+    <div class="actions">
+      <button class="btn alt" id="saveBtn">☆ Save</button>
+      <button class="btn alt" data-go="explore">Change spot</button>
+      <button class="btn" id="refreshBtn">↻ Refresh</button>
     </div>
   </div>
 
-  <div class="metric-grid forecast-metrics" id="forecastMetrics"></div>
-  <div class="data-line" id="dataStatus">Waiting for forecast...</div>
+  <div class="status" id="forecastStatus">Loading forecast...</div>
 
-  <div class="section-heading">
+  <div class="grid four" id="mainMetrics"></div>
+
+  <div class="sectionhead">
     <div>
-      <div class="eyebrow">Marine outlook</div>
-      <h2>Seven-day wave forecast</h2>
+      <div class="eyebrow">Detailed conditions</div>
+      <h2>Everything happening in the water</h2>
+      <p class="tiny">Marine and weather model estimates, updated from live APIs.</p>
     </div>
   </div>
 
-  <div class="card chart-card">
-    <h3>Significant wave height</h3>
-    <p class="small">Offshore model wave height. Not the height of breaking waves at the beach.</p>
-    <div class="chart-container">
-      <canvas id="waveChart"></canvas>
+  <div class="grid four" id="detailMetrics"></div>
+
+  <div class="sectionhead">
+    <div>
+      <div class="eyebrow">Interactive forecasting</div>
+      <h2>Explore every hour</h2>
+      <p class="tiny">Scroll charts sideways, move the slider, or hover to inspect exact modeled values.</p>
     </div>
-    <div class="small" id="waveChartMessage"></div>
   </div>
 
-  <div class="forecast-columns">
-    <div class="card chart-card">
-      <h3>Wind forecast</h3>
-      <p class="small">Modeled wind speed at 10 meters above the surface.</p>
-      <div class="chart-container">
-        <canvas id="windChart"></canvas>
+  <div class="chartstack">
+    <div class="card chartcard">
+      <div class="charthead">
+        <div>
+          <h3>Wave height</h3>
+          <div class="tiny">Significant wave height · not exact breaking-wave height</div>
+        </div>
+        <div class="actions">
+          <button class="btn alt small" data-scroll="wave:-1">←</button>
+          <button class="btn alt small" data-scroll="wave:1">→</button>
+        </div>
       </div>
-      <div class="small" id="windChartMessage"></div>
+      <div class="chartview" id="waveView"><canvas class="plot" id="wavePlot"></canvas></div>
+      <div class="readout" id="waveReadout"></div>
+      <input class="slider" id="waveSlider" type="range" min="0" max="1" value="0">
     </div>
 
-    <div class="card card-pad">
-      <div class="eyebrow">SWELL analysis</div>
-      <h3 style="font-size:25px;margin:12px 0">Understand the conditions.</h3>
-      <div class="note" id="analysisText">Loading marine and wind data...</div>
-      <div class="info-list">
-        <div class="stat-item"><span class="muted">Marine source</span><strong>Open-Meteo</strong></div>
-        <div class="stat-item"><span class="muted">Wind source</span><strong>Open-Meteo</strong></div>
-        <div class="stat-item"><span class="muted">Forecast type</span><strong>Model estimate</strong></div>
+    <div class="card chartcard">
+      <div class="charthead">
+        <div>
+          <h3>Sea level / tide trend</h3>
+          <div class="tiny">Modeled sea-level variation · not official local tide predictions</div>
+        </div>
+        <div class="actions">
+          <button class="btn alt small" data-scroll="tide:-1">←</button>
+          <button class="btn alt small" data-scroll="tide:1">→</button>
+        </div>
       </div>
+      <div class="chartview" id="tideView"><canvas class="plot" id="tidePlot"></canvas></div>
+      <div class="readout" id="tideReadout"></div>
+      <input class="slider" id="tideSlider" type="range" min="0" max="1" value="0">
+    </div>
+
+    <div class="card chartcard">
+      <div class="charthead">
+        <div>
+          <h3>Wind and gusts</h3>
+          <div class="tiny">10-meter wind forecast · interactive hourly values</div>
+        </div>
+        <div class="actions">
+          <button class="btn alt small" data-scroll="wind:-1">←</button>
+          <button class="btn alt small" data-scroll="wind:1">→</button>
+        </div>
+      </div>
+      <div class="chartview" id="windView"><canvas class="plot" id="windPlot"></canvas></div>
+      <div class="readout" id="windReadout"></div>
+      <input class="slider" id="windSlider" type="range" min="0" max="1" value="0">
+    </div>
+
+    <div class="card chartcard">
+      <div class="charthead">
+        <div>
+          <h3>Water temperature</h3>
+          <div class="tiny">Modeled sea-surface temperature</div>
+        </div>
+        <div class="actions">
+          <button class="btn alt small" data-scroll="water:-1">←</button>
+          <button class="btn alt small" data-scroll="water:1">→</button>
+        </div>
+      </div>
+      <div class="chartview" id="waterView"><canvas class="plot" id="waterPlot"></canvas></div>
+      <div class="readout" id="waterReadout"></div>
+      <input class="slider" id="waterSlider" type="range" min="0" max="1" value="0">
     </div>
   </div>
 
-  <div class="section-heading">
+  <div class="sectionhead">
     <div>
       <div class="eyebrow">Hour by hour</div>
-      <h2>Detailed forecast timeline</h2>
-      <p class="small">Hourly values for the next 48 hours, where available.</p>
+      <h2>Complete forecast table</h2>
     </div>
   </div>
 
-  <div class="card card-pad">
-    <div class="table-wrap">
+  <div class="card pad">
+    <div class="tablewrap">
       <table>
         <thead>
           <tr>
             <th>Time</th>
-            <th>Wave height</th>
+            <th>Waves</th>
             <th>Period</th>
-            <th>Wave direction</th>
+            <th>Primary swell</th>
+            <th>Secondary swell</th>
+            <th>Water</th>
             <th>Wind</th>
-            <th>Wind direction</th>
+            <th>Gusts</th>
+            <th>Sea level</th>
           </tr>
         </thead>
-        <tbody id="hourlyRows">
-          <tr><td colspan="6">Loading forecast...</td></tr>
-        </tbody>
+        <tbody id="hourlyRows"></tbody>
       </table>
     </div>
   </div>
 
-  <p class="small" style="margin-top:22px">
-    Important: SWELL currently uses regional marine and weather models. These values do not account for all local factors such as bathymetry, beach orientation, tidal changes, and wave transformation. This is not a calibrated surf-quality score.
-  </p>
+  <div class="sectionhead"><h2>About these forecasts</h2></div>
+  <div class="card note">
+    SWELL uses regional marine and atmospheric models. Offshore significant wave height is not the same as breaking surf height. Modeled sea-level changes are not official tide-station predictions. Conditions can differ substantially at individual breaks. Missing data is displayed as — rather than invented.
+  </div>
 </section>
 
-<!-- FAVORITES -->
+<section class="page" id="explore">
+  <div class="eyebrow">Surf spot directory</div>
+  <h1>Find your break.</h1>
+  <p class="muted">Search the coast and select any location to load its forecast.</p>
+
+  <div class="toolbar">
+    <input class="field" id="search" placeholder="Search spots or regions...">
+    <select class="field" id="region">
+      <option value="all">All regions</option>
+      <option>Southern California</option>
+      <option>Central California</option>
+      <option>Northern California</option>
+      <option>Hawaii</option>
+      <option>East Coast</option>
+    </select>
+  </div>
+
+  <div class="card mapbox"><div id="map"></div></div>
+
+  <div class="sectionhead">
+    <h2>Surf spots</h2>
+    <span class="tiny" id="count"></span>
+  </div>
+
+  <div class="grid three" id="spotGrid"></div>
+</section>
+
 <section class="page" id="favorites">
-  <div class="eyebrow">Your collection</div>
-  <h1 class="page-title">Your favorite breaks.</h1>
-  <p class="muted page-intro">Save the spots you check most often. Your list stays in this browser.</p>
-  <div class="card favorite-list" id="favoriteList"></div>
+  <div class="eyebrow">Saved breaks</div>
+  <h1>Your favorites.</h1>
+  <p class="muted">Your saved locations stay in this browser.</p>
+  <div class="card pad" id="savedList"></div>
 </section>
 
-<!-- SETTINGS -->
 <section class="page" id="settings">
-  <div class="eyebrow">Make SWELL yours</div>
-  <h1 class="page-title">Preferences.</h1>
-  <p class="muted page-intro">Customize how you see the ocean.</p>
+  <div class="eyebrow">Personalization</div>
+  <h1>Settings.</h1>
 
-  <div class="card settings-list">
+  <div class="card pad">
     <div class="setting">
-      <div>
-        <strong>Appearance</strong>
-        <p>Choose the look of your dashboard.</p>
-      </div>
-      <select id="themeSelect">
-        <option value="light">Light mode</option>
-        <option value="dark">Dark mode</option>
+      <div><strong>Appearance</strong><p class="tiny">Choose light or dark mode.</p></div>
+      <select class="field" id="themeSelect">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
       </select>
     </div>
 
     <div class="setting">
-      <div>
-        <strong>Measurement units</strong>
-        <p>Switch between feet / mph and meters / km/h.</p>
-      </div>
-      <select id="unitSelect">
-        <option value="imperial">Feet / mph</option>
-        <option value="metric">Meters / km/h</option>
+      <div><strong>Measurement units</strong><p class="tiny">Choose your preferred units.</p></div>
+      <select class="field" id="unitSelect">
+        <option value="us">Feet / mph / °F</option>
+        <option value="metric">Meters / km/h / °C</option>
       </select>
     </div>
 
     <div class="setting">
-      <div>
-        <strong>Automatic refresh</strong>
-        <p>Check for new model data every 30 minutes while SWELL is open.</p>
-      </div>
-      <strong style="color:var(--accent)">Enabled</strong>
-    </div>
-
-    <div class="setting">
-      <div>
-        <strong>Marine and weather data</strong>
-        <p>Powered by the public Open-Meteo forecast APIs.</p>
-      </div>
+      <div><strong>Forecast data</strong><p class="tiny">Marine and atmospheric models</p></div>
       <strong>Open-Meteo</strong>
     </div>
 
     <div class="setting">
-      <div>
-        <strong>Platform version</strong>
-        <p>SWELL — Surf Intelligence</p>
-      </div>
-      <strong>3.0</strong>
+      <div><strong>Automatic refresh</strong><p class="tiny">Check for updates every 30 minutes while the site is open.</p></div>
+      <strong>Enabled</strong>
     </div>
-  </div>
-
-  <div class="section-heading"><h2>Forecast transparency</h2></div>
-  <div class="card card-pad">
-    <p class="muted">SWELL requests marine and atmospheric model data for the selected coordinates. Marine grid coverage varies, especially close to shore. If the data is unavailable, SWELL displays missing values instead of fabricating conditions.</p>
-    <p class="muted">A 30-minute refresh means the app checks for updated information; it does not mean the underlying weather and marine models publish new forecasts every 30 minutes.</p>
   </div>
 </section>
 
 </main>
 
 <footer class="footer">
-  <div class="footer-inner">
-    <div><strong>SWELL.</strong> © 2026 · Independent Surf Intelligence</div>
-    <div>Marine and weather models: Open-Meteo · Maps: OpenStreetMap</div>
+  <div class="wrap">
+    <strong>SWELL.</strong> © 2026 · Ocean Intelligence · Open-Meteo data · OpenStreetMap
   </div>
 </footer>
 
-<div class="toast" id="toast" role="status"></div>
+<div class="toast" id="toast"></div>
 
 <script>
 "use strict";
 
-/* =====================================================
-   SWELL 3.0 — SURF SPOT DIRECTORY
-   ===================================================== */
+const $=id=>document.getElementById(id);
 
-const SPOTS = [
-  ["Manhattan Beach",33.8847,-118.4109,"Southern California"],
-  ["El Porto",33.9000,-118.4220,"Southern California"],
-  ["Hermosa Beach",33.8622,-118.3995,"Southern California"],
-  ["Redondo Beach",33.8492,-118.3884,"Southern California"],
-  ["Torrance Beach",33.8135,-118.3910,"Southern California"],
-  ["Venice Beach",33.985,-118.472,"Southern California"],
-  ["Santa Monica",34.0085,-118.498,"Southern California"],
-  ["Malibu Surfrider",34.0337,-118.677,"Southern California"],
-  ["Zuma Beach",34.0215,-118.831,"Southern California"],
-  ["County Line",34.052,-118.965,"Southern California"],
-  ["Rincon",34.373,-119.476,"Southern California"],
-  ["C Street Ventura",34.277,-119.307,"Southern California"],
-  ["Huntington Beach",33.655,-118.002,"Southern California"],
-  ["Newport Beach",33.607,-117.930,"Southern California"],
-  ["The Wedge",33.593,-117.882,"Southern California"],
-  ["Salt Creek",33.476,-117.722,"Southern California"],
-  ["Trestles",33.384,-117.593,"Southern California"],
-  ["San Onofre",33.371,-117.568,"Southern California"],
-  ["Oceanside",33.196,-117.380,"Southern California"],
-  ["Swamis",33.035,-117.293,"Southern California"],
-  ["Cardiff Reef",33.020,-117.285,"Southern California"],
-  ["Blacks Beach",32.890,-117.253,"Southern California"],
-  ["La Jolla Shores",32.855,-117.257,"Southern California"],
-  ["Windansea",32.831,-117.281,"Southern California"],
-  ["Pacific Beach",32.797,-117.257,"Southern California"],
-  ["Ocean Beach San Diego",32.749,-117.253,"Southern California"],
-  ["Steamer Lane",36.951,-122.026,"Central California"],
-  ["Pleasure Point",36.952,-121.970,"Central California"],
-  ["Morro Bay",35.370,-120.867,"Central California"],
-  ["Pismo Beach",35.138,-120.643,"Central California"],
-  ["Ocean Beach SF",37.759,-122.511,"Northern California"],
-  ["Mavericks",37.494,-122.500,"Northern California"],
-  ["Fort Point",37.810,-122.477,"Northern California"],
-  ["Pacifica",37.612,-122.496,"Northern California"],
-  ["Pipeline",21.665,-158.053,"Hawaii"],
-  ["Waimea Bay",21.641,-158.065,"Hawaii"],
-  ["Sunset Beach",21.679,-158.040,"Hawaii"],
-  ["Haleiwa",21.595,-158.105,"Hawaii"],
-  ["Honolua Bay",21.013,-156.639,"Hawaii"],
-  ["Hookipa",20.934,-156.357,"Hawaii"],
-  ["Cocoa Beach",28.320,-80.607,"East Coast"],
-  ["New Smyrna Beach",29.026,-80.918,"East Coast"],
-  ["Sebastian Inlet",27.860,-80.448,"East Coast"],
-  ["Outer Banks",35.573,-75.466,"East Coast"],
-  ["Montauk",41.035,-71.955,"East Coast"],
-  ["Rockaway Beach",40.583,-73.817,"East Coast"]
-].map((spot,id)=>({
-  id,
-  name:spot[0],
-  lat:spot[1],
-  lon:spot[2],
-  region:spot[3]
+const RAW=[
+["Manhattan Beach",33.8847,-118.4109,"Southern California"],
+["El Porto",33.9000,-118.4220,"Southern California"],
+["Hermosa Beach",33.8622,-118.3995,"Southern California"],
+["Redondo Beach",33.8492,-118.3884,"Southern California"],
+["Torrance Beach",33.8135,-118.3910,"Southern California"],
+["Venice Beach",33.985,-118.472,"Southern California"],
+["Santa Monica",34.0085,-118.498,"Southern California"],
+["Malibu Surfrider",34.0337,-118.677,"Southern California"],
+["Zuma Beach",34.0215,-118.831,"Southern California"],
+["County Line",34.052,-118.965,"Southern California"],
+["Rincon",34.373,-119.476,"Southern California"],
+["C Street Ventura",34.277,-119.307,"Southern California"],
+["Huntington Beach",33.655,-118.002,"Southern California"],
+["Newport Beach",33.607,-117.930,"Southern California"],
+["The Wedge",33.593,-117.882,"Southern California"],
+["Salt Creek",33.476,-117.722,"Southern California"],
+["Trestles",33.384,-117.593,"Southern California"],
+["San Onofre",33.371,-117.568,"Southern California"],
+["Oceanside",33.196,-117.380,"Southern California"],
+["Swamis",33.035,-117.293,"Southern California"],
+["Cardiff Reef",33.020,-117.285,"Southern California"],
+["Blacks Beach",32.890,-117.253,"Southern California"],
+["La Jolla Shores",32.855,-117.257,"Southern California"],
+["Windansea",32.831,-117.281,"Southern California"],
+["Pacific Beach",32.797,-117.257,"Southern California"],
+["Ocean Beach San Diego",32.749,-117.253,"Southern California"],
+["Steamer Lane",36.951,-122.026,"Central California"],
+["Pleasure Point",36.952,-121.970,"Central California"],
+["Morro Bay",35.370,-120.867,"Central California"],
+["Pismo Beach",35.138,-120.643,"Central California"],
+["Ocean Beach SF",37.759,-122.511,"Northern California"],
+["Mavericks",37.494,-122.500,"Northern California"],
+["Fort Point",37.810,-122.477,"Northern California"],
+["Pacifica",37.612,-122.496,"Northern California"],
+["Pipeline",21.665,-158.053,"Hawaii"],
+["Waimea Bay",21.641,-158.065,"Hawaii"],
+["Sunset Beach",21.679,-158.040,"Hawaii"],
+["Haleiwa",21.595,-158.105,"Hawaii"],
+["Honolua Bay",21.013,-156.639,"Hawaii"],
+["Hookipa",20.934,-156.357,"Hawaii"],
+["Cocoa Beach",28.320,-80.607,"East Coast"],
+["New Smyrna Beach",29.026,-80.918,"East Coast"],
+["Sebastian Inlet",27.860,-80.448,"East Coast"],
+["Outer Banks",35.573,-75.466,"East Coast"],
+["Montauk",41.035,-71.955,"East Coast"],
+["Rockaway Beach",40.583,-73.817,"East Coast"]
+];
+
+const SPOTS=RAW.map((s,id)=>({
+  id,name:s[0],lat:s[1],lon:s[2],region:s[3]
 }));
 
-const $ = id => document.getElementById(id);
-const valid = value => typeof value==="number" && Number.isFinite(value);
-
-function storedJSON(key,fallback) {
+function stored(key,fallback){
   try {
     const value=JSON.parse(localStorage.getItem(key));
-    return value===null ? fallback : value;
-  } catch {
-    return fallback;
-  }
+    return value===null?fallback:value;
+  } catch {return fallback;}
 }
 
-let favorites=storedJSON("swellFavorites",[]);
-if(!Array.isArray(favorites)) favorites=[];
+let favorites=stored("swellFavorites",[]);
+if(!Array.isArray(favorites))favorites=[];
 
-let selectedId=Number(localStorage.getItem("swellSelectedSpot")||0);
-if(!SPOTS.some(s=>s.id===selectedId)) selectedId=0;
+let selectedId=stored("swellSelectedSpot",0);
+let selected=SPOTS[selectedId]||SPOTS[0];
 
-let selected=SPOTS[selectedId];
 let theme=localStorage.getItem("swellTheme")||"light";
-let units=localStorage.getItem("swellUnits")||"imperial";
+let units=localStorage.getItem("swellUnits")||"us";
 
+let data=null;
 let map=null;
-let mapMarkers=[];
-let waveChart=null;
-let windChart=null;
-let forecast=null;
-let requestNumber=0;
-let toastTimer=null;
-let lastFetchTime=0;
+let markers=[];
+let requestId=0;
+let lastFetch=0;
+let activePage="home";
 
-const forecastCache=new Map();
+const valid=v=>typeof v==="number"&&Number.isFinite(v);
 
-/* =====================================================
-   NAVIGATION
-   ===================================================== */
+function wave(v){
+  if(!valid(v))return "—";
+  return units==="us"
+    ?(v*3.28084).toFixed(1)+" ft"
+    :v.toFixed(1)+" m";
+}
 
-function go(page) {
-  const target=$(page);
-  if(!target) return;
+function wind(v){
+  if(!valid(v))return "—";
+  return units==="us"
+    ?Math.round(v/1.609344)+" mph"
+    :Math.round(v)+" km/h";
+}
 
+function temp(v){
+  if(!valid(v))return "—";
+  return units==="us"
+    ?Math.round(v*9/5+32)+"°F"
+    :Math.round(v)+"°C";
+}
+
+function period(v){
+  return valid(v)?v.toFixed(1)+" s":"—";
+}
+
+function direction(v){
+  return valid(v)?Math.round(v)+"°":"—";
+}
+
+function compass(v){
+  if(!valid(v))return "—";
+  return ["N","NE","E","SE","S","SW","W","NW"][Math.round(v/45)%8];
+}
+
+function level(v){
+  return valid(v)?v.toFixed(2)+" m":"—";
+}
+
+function timeLabel(t){
+  if(!t)return "—";
+  const d=new Date(t);
+  return Number.isNaN(d.getTime())?t:
+    d.toLocaleString("en-US",{weekday:"short",hour:"numeric"});
+}
+
+function metric(label,value,note){
+  return `<div class="card metric">
+    <div class="eyebrow">${label}</div>
+    <div class="big">${value}</div>
+    <div class="tiny">${note}</div>
+  </div>`;
+}
+
+function toast(message){
+  $("toast").textContent=message;
+  $("toast").classList.add("show");
+  setTimeout(()=>$("toast").classList.remove("show"),2200);
+}
+
+function go(page){
+  activePage=page;
   document.querySelectorAll(".page").forEach(el=>{
     el.classList.toggle("active",el.id===page);
   });
-
-  document.querySelectorAll(".nav-btn").forEach(el=>{
-    el.classList.toggle("active",el.dataset.page===page);
+  document.querySelectorAll("nav button").forEach(btn=>{
+    btn.classList.toggle("active",btn.dataset.go===page);
   });
-
   history.replaceState(null,"","#"+page);
-  window.scrollTo({top:0,behavior:"instant"});
+  window.scrollTo(0,0);
 
-  if(page==="explore") {
+  if(page==="explore"){
     setTimeout(()=>{
       initMap();
-      if(map) map.invalidateSize();
+      if(map)map.invalidateSize();
     },100);
   }
 
-  if(page==="favorites") renderFavorites();
-  if(page==="forecast") {
-    renderForecastHeader();
-    renderForecast();
-  }
+  if(page==="forecast")drawAll();
+  if(page==="favorites")renderSaved();
 }
 
-window.go=go;
-
-document.querySelectorAll(".nav-btn").forEach(btn=>{
-  btn.addEventListener("click",()=>go(btn.dataset.page));
-});
-
-$("logoLink").addEventListener("click",event=>{
-  event.preventDefault();
-  go("home");
-});
-
-/* =====================================================
-   SETTINGS
-   ===================================================== */
-
-function applyTheme() {
-  document.body.classList.toggle("dark",theme==="dark");
-  $("themeButton").textContent=theme==="dark"?"☀":"◐";
-  $("themeSelect").value=theme;
-  localStorage.setItem("swellTheme",theme);
-  updateChartColors();
+function spotCard(s){
+  const saved=favorites.includes(s.id);
+  return `<div class="card feature">
+    <div>
+      <div class="eyebrow">${s.region}</div>
+      <strong>${s.name}</strong>
+      <div class="tiny">${s.lat.toFixed(3)}°, ${s.lon.toFixed(3)}°</div>
+    </div>
+    <div class="bottom">
+      <button class="btn small" data-select="${s.id}">Forecast ↗</button>
+      <button class="btn alt small" data-favorite="${s.id}">${saved?"★":"☆"}</button>
+    </div>
+  </div>`;
 }
 
-function toggleTheme() {
-  theme=theme==="dark"?"light":"dark";
-  applyTheme();
+function renderSpots(){
+  const q=$("search").value.trim().toLowerCase();
+  const region=$("region").value;
+
+  const list=SPOTS.filter(s=>
+    (region==="all"||s.region===region)&&
+    (s.name.toLowerCase().includes(q)||s.region.toLowerCase().includes(q))
+  );
+
+  $("spotGrid").innerHTML=list.map(spotCard).join("")||
+    '<div class="card pad">No matching spots.</div>';
+
+  $("count").textContent=list.length+" spots";
+  updateMarkers(list);
 }
 
-$("themeButton").addEventListener("click",toggleTheme);
-
-$("themeSelect").addEventListener("change",event=>{
-  theme=event.target.value;
-  applyTheme();
-});
-
-$("unitSelect").addEventListener("change",event=>{
-  units=event.target.value;
-  localStorage.setItem("swellUnits",units);
-  renderForecast();
-  showToast("Measurement units updated");
-});
-
-function waveUnit() {
-  return units==="metric"?"m":"ft";
+function renderSaved(){
+  const list=SPOTS.filter(s=>favorites.includes(s.id));
+  $("savedList").innerHTML=list.length
+    ?list.map(s=>`<div class="savedrow">
+      <div><strong>${s.name}</strong><div class="tiny">${s.region}</div></div>
+      <div class="actions">
+        <button class="btn small" data-select="${s.id}">Forecast →</button>
+        <button class="btn alt small" data-favorite="${s.id}">★</button>
+      </div>
+    </div>`).join("")
+    :'<div class="muted">No saved spots yet. Explore the coastline and tap ☆.</div>';
 }
 
-function windUnit() {
-  return units==="metric"?"km/h":"mph";
-}
-
-function formatWave(value) {
-  if(!valid(value)) return "—";
-  const converted=units==="metric"?value:value*3.28084;
-  return converted.toFixed(1)+" "+waveUnit();
-}
-
-function formatWind(value) {
-  if(!valid(value)) return "—";
-  const converted=units==="metric"?value:value/1.609344;
-  return Math.round(converted)+" "+windUnit();
-}
-
-function formatPeriod(value) {
-  return valid(value)?value.toFixed(1)+" s":"—";
-}
-
-function formatDirection(value) {
-  return valid(value)?Math.round(value)+"°":"—";
-}
-
-function compass(value) {
-  if(!valid(value)) return "—";
-  const points=["N","NE","E","SE","S","SW","W","NW"];
-  return points[Math.round(value/45)%8];
-}
-
-function showToast(message) {
-  const el=$("toast");
-  el.textContent=message;
-  el.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>el.classList.remove("show"),2500);
-}
-
-/* =====================================================
-   SPOT CARDS AND FAVORITES
-   ===================================================== */
-
-function isFavorite(id) {
-  return favorites.includes(id);
-}
-
-function toggleFavorite(id) {
-  if(isFavorite(id)) {
-    favorites=favorites.filter(value=>value!==id);
-    showToast("Spot removed from favorites");
-  } else {
+function toggleFavorite(id){
+  if(favorites.includes(id)){
+    favorites=favorites.filter(x=>x!==id);
+    toast("Removed from favorites");
+  }else{
     favorites.push(id);
-    showToast("Spot saved to favorites");
+    toast("Saved to favorites");
   }
 
   localStorage.setItem("swellFavorites",JSON.stringify(favorites));
-  updateCounts();
-  renderFavorites();
+  render();
   renderSpots();
-  renderFeatured();
-  renderForecastHeader();
+  renderSaved();
 }
 
-window.toggleFavorite=toggleFavorite;
-
-function selectSpot(id) {
-  const spot=SPOTS.find(s=>s.id===Number(id));
-  if(!spot) return;
-
-  selected=spot;
-  selectedId=spot.id;
-  localStorage.setItem("swellSelectedSpot",String(spot.id));
-
-  forecast=null;
-  requestNumber++;
-
-  renderForecastHeader();
-  renderForecast();
+function selectSpot(id){
+  selected=SPOTS[id]||selected;
+  localStorage.setItem("swellSelectedSpot",JSON.stringify(selected.id));
+  data=null;
+  requestId++;
+  render();
   go("forecast");
-  fetchForecast();
-
-  showToast("Viewing "+spot.name);
+  load();
 }
 
-window.selectSpot=selectSpot;
-
-function spotCard(spot,index) {
-  const saved=isFavorite(spot.id);
-
-  return `
-    <article class="card spot-card">
-      <div class="spot-photo photo${index%3===1?2:index%3===2?3:1}">
-        <span class="photo-badge">${spot.region}</span>
-      </div>
-      <div class="spot-body">
-        <h3>${spot.name}</h3>
-        <p>${spot.region}</p>
-        <div class="spot-footer">
-          <button class="btn btn-small btn-accent" onclick="selectSpot(${spot.id})">
-            View forecast ↗
-          </button>
-          <div class="spot-actions">
-            <button class="favorite-icon ${saved?"saved":""}"
-              onclick="toggleFavorite(${spot.id})"
-              aria-label="${saved?"Remove favorite":"Save favorite"}">
-              ${saved?"★":"☆"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </article>`;
-}
-
-function renderFeatured() {
-  const featuredIds=[0,1,7,12,26,34];
-  const featured=featuredIds.map(id=>SPOTS[id]);
-
-  $("featuredSpots").innerHTML=featured.map((spot,index)=>
-    spotCard(spot,index)
-  ).join("");
-}
-
-function filteredSpots() {
-  const search=$("spotSearch").value.trim().toLowerCase();
-  const region=$("regionFilter").value;
-
-  return SPOTS.filter(spot=>{
-    const matchesRegion=region==="all"||spot.region===region;
-    const matchesSearch=
-      spot.name.toLowerCase().includes(search)||
-      spot.region.toLowerCase().includes(search);
-
-    return matchesRegion&&matchesSearch;
-  });
-}
-
-function renderSpots() {
-  const list=filteredSpots();
-
-  $("spotCount").textContent=list.length+" of "+SPOTS.length+" spots";
-  $("allSpots").innerHTML=list.length
-    ?list.map((spot,index)=>spotCard(spot,index)).join("")
-    :`<div class="card empty-state">
-        <h3>No matching spots</h3>
-        <p>Try another search or region.</p>
-      </div>`;
-
-  updateMapMarkers(list);
-}
-
-$("spotSearch").addEventListener("input",renderSpots);
-$("regionFilter").addEventListener("change",renderSpots);
-
-function renderFavorites() {
-  const saved=favorites
-    .map(id=>SPOTS.find(spot=>spot.id===id))
-    .filter(Boolean);
-
-  $("favoriteList").innerHTML=saved.length
-    ?saved.map(spot=>`
-      <div class="favorite-row">
-        <div>
-          <strong>${spot.name}</strong>
-          <p>${spot.region}</p>
-        </div>
-        <div class="flex wrap">
-          <button class="btn btn-small btn-accent" onclick="selectSpot(${spot.id})">
-            Forecast →
-          </button>
-          <button class="favorite-icon saved" onclick="toggleFavorite(${spot.id})"
-            aria-label="Remove favorite">★</button>
-        </div>
-      </div>`).join("")
-    :`<div class="empty-state">
-        <h3>No favorites yet.</h3>
-        <p>Explore the coast and save the breaks you love.</p>
-        <button class="btn btn-accent" onclick="go('explore')">
-          Explore spots →
-        </button>
-      </div>`;
-}
-
-function updateCounts() {
-  $("totalSpotCount").textContent=SPOTS.length;
-  $("savedSpotCount").textContent=favorites.length;
-}
-
-/* =====================================================
-   INTERACTIVE MAP
-   ===================================================== */
-
-function initMap() {
-  if(map) return;
-
-  if(typeof L==="undefined") {
-    $("map").innerHTML=`<div class="map-error">
-      The map library couldn't load. You can still search the surf spot directory below.
-    </div>`;
+function initMap(){
+  if(map)return;
+  if(typeof L==="undefined"){
+    $("map").textContent="Map library unavailable. Use the directory below.";
     return;
   }
 
-  map=L.map("map",{scrollWheelZoom:false})
-    .setView([34.0,-119.5],6);
+  map=L.map("map",{scrollWheelZoom:false}).setView([34,-119.5],6);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
     maxZoom:18,
-    attribution:"&copy; OpenStreetMap contributors"
+    attribution:"© OpenStreetMap contributors"
   }).addTo(map);
 
-  updateMapMarkers(filteredSpots());
+  renderSpots();
 }
 
-function updateMapMarkers(spots) {
-  if(!map||typeof L==="undefined") return;
+function updateMarkers(list){
+  if(!map)return;
 
-  mapMarkers.forEach(marker=>map.removeLayer(marker));
-  mapMarkers=[];
+  markers.forEach(m=>map.removeLayer(m));
+  markers=[];
 
-  spots.forEach(spot=>{
-    const marker=L.circleMarker([spot.lat,spot.lon],{
+  list.forEach(s=>{
+    const m=L.circleMarker([s.lat,s.lon],{
       radius:7,
       color:"#fff",
       weight:2,
-      fillColor:"#0a8490",
+      fillColor:"#161819",
       fillOpacity:1
     }).addTo(map);
 
-    marker.bindPopup(`
-      <div class="map-popup">
-        <strong>${spot.name}</strong>
-        <p>${spot.region}</p>
-        <button onclick="selectSpot(${spot.id})">View forecast →</button>
-      </div>
-    `);
+    const el=document.createElement("div");
+    const title=document.createElement("strong");
+    title.textContent=s.name;
 
-    mapMarkers.push(marker);
+    const button=document.createElement("button");
+    button.textContent="View forecast →";
+    button.style.cssText="display:block;margin-top:10px;padding:8px;background:#111;color:#fff;border:0;border-radius:7px";
+    button.onclick=()=>selectSpot(s.id);
+
+    el.append(title,button);
+    m.bindPopup(el);
+    markers.push(m);
   });
 
-  if(spots.length>0&&spots.length<SPOTS.length) {
-    const bounds=L.latLngBounds(spots.map(s=>[s.lat,s.lon]));
-    map.fitBounds(bounds.pad(.15),{maxZoom:10});
+  if(list.length&&list.length<SPOTS.length){
+    map.fitBounds(
+      L.latLngBounds(list.map(s=>[s.lat,s.lon])).pad(.15),
+      {maxZoom:10}
+    );
   }
 }
 
-/* =====================================================
-   METRICS
-   ===================================================== */
-
-function metricHTML(label,value,note) {
-  return `
-    <div class="metric">
-      <div class="metric-label">${label}</div>
-      <div class="metric-value">${value}</div>
-      <div class="metric-note">${note}</div>
-    </div>`;
-}
-
-function renderForecastHeader() {
-  $("forecastTitle").textContent=selected.name;
-  $("forecastRegion").textContent=selected.region;
-  $("homeSpotTitle").textContent=selected.name;
-  $("homeSpotRegion").textContent=selected.region;
-
-  const saved=isFavorite(selected.id);
-  $("favoriteButton").textContent=saved?"★ Saved":"☆ Save spot";
-  $("favoriteButton").onclick=()=>toggleFavorite(selected.id);
-}
-
-function currentMetrics() {
-  const ocean=forecast?.ocean?.current||{};
-  const weather=forecast?.weather?.current||{};
-
-  return [
-    metricHTML(
-      "Wave height",
-      formatWave(ocean.wave_height),
-      "Significant wave height"
-    ),
-    metricHTML(
-      "Wave period",
-      formatPeriod(ocean.wave_period),
-      "Marine model"
-    ),
-    metricHTML(
-      "Wave direction",
-      formatDirection(ocean.wave_direction),
-      compass(ocean.wave_direction)+" · Waves from"
-    ),
-    metricHTML(
-      "Wind speed",
-      formatWind(weather.wind_speed_10m),
-      compass(weather.wind_direction_10m)+" · 10 m wind"
-    )
-  ].join("");
-}
-
-/* =====================================================
-   API REQUESTS
-   ===================================================== */
-
-async function fetchJSON(url) {
+async function getJSON(url){
   const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),18000);
+  const timer=setTimeout(()=>controller.abort(),18000);
 
-  try {
+  try{
     const response=await fetch(url,{signal:controller.signal});
+    if(!response.ok)throw Error("HTTP "+response.status);
 
-    if(!response.ok) {
-      throw new Error("HTTP "+response.status);
-    }
+    const json=await response.json();
+    if(json.error)throw Error(json.reason||"API error");
 
-    const data=await response.json();
-
-    if(data.error) {
-      throw new Error(data.reason||"API returned an error");
-    }
-
-    return data;
-  } finally {
-    clearTimeout(timeout);
+    return json;
+  }finally{
+    clearTimeout(timer);
   }
 }
 
-function marineURL(spot) {
-  const url=new URL("https://marine-api.open-meteo.com/v1/marine");
-
+function api(base,spot,params){
+  const url=new URL(base);
   url.searchParams.set("latitude",spot.lat);
   url.searchParams.set("longitude",spot.lon);
-  url.searchParams.set("current","wave_height,wave_direction,wave_period");
-  url.searchParams.set("hourly","wave_height,wave_direction,wave_period");
-  url.searchParams.set("forecast_days","7");
   url.searchParams.set("timezone","auto");
+  url.searchParams.set("forecast_days","7");
+
+  Object.entries(params).forEach(([key,value])=>{
+    url.searchParams.set(key,value);
+  });
 
   return url.toString();
 }
 
-function weatherURL(spot) {
-  const url=new URL("https://api.open-meteo.com/v1/forecast");
-
-  url.searchParams.set("latitude",spot.lat);
-  url.searchParams.set("longitude",spot.lon);
-  url.searchParams.set("current","wind_speed_10m,wind_direction_10m");
-  url.searchParams.set("hourly","wind_speed_10m,wind_direction_10m");
-  url.searchParams.set
-
-  url.searchParams.set("wind_speed_unit","kmh");
-  url.searchParams.set("forecast_days","7");
-  url.searchParams.set("timezone","auto");
-  return url.toString();
-}
-
-async function fetchForecast(force=false) {
-  const token=++requestNumber;
+async function load(){
+  const id=++requestId;
   const spot={...selected};
-  const cached=forecastCache.get(spot.id);
 
-  if(!force && cached && Date.now()-cached.time<20*60*1000) {
-    forecast=cached.data;
-    lastFetchTime=cached.time;
-    renderForecast();
-    return;
-  }
+  $("forecastStatus").textContent="Requesting marine and weather models...";
+  $("refreshBtn").disabled=true;
 
-  $("dataStatus").textContent="Loading forecast data...";
-  $("homeDataStatus").textContent="Loading forecast data...";
-  $("refreshButton").disabled=true;
+  const marine=api(
+    "https://marine-api.open-meteo.com/v1/marine",
+    spot,
+    {
+      current:[
+        "wave_height",
+        "wave_period",
+        "wave_direction",
+        "swell_wave_height",
+        "swell_wave_period",
+        "swell_wave_direction",
+        "sea_surface_temperature"
+      ].join(","),
+      hourly:[
+        "wave_height",
+        "wave_period",
+        "wave_direction",
+        "swell_wave_height",
+        "swell_wave_period",
+        "swell_wave_direction",
+        "secondary_swell_wave_height",
+        "secondary_swell_wave_period",
+        "secondary_swell_wave_direction",
+        "sea_surface_temperature",
+        "sea_level_height_msl"
+      ].join(",")
+    }
+  );
+
+  const weather=api(
+    "https://api.open-meteo.com/v1/forecast",
+    spot,
+    {
+      current:[
+        "temperature_2m",
+        "apparent_temperature",
+        "wind_speed_10m",
+        "wind_direction_10m",
+        "wind_gusts_10m",
+        "relative_humidity_2m",
+        "surface_pressure",
+        "cloud_cover",
+        "precipitation"
+      ].join(","),
+      hourly:[
+        "wind_speed_10m",
+        "wind_direction_10m",
+        "wind_gusts_10m",
+        "temperature_2m",
+        "relative_humidity_2m"
+      ].join(","),
+      daily:"sunrise,sunset",
+      wind_speed_unit:"kmh"
+    }
+  );
 
   const results=await Promise.allSettled([
-    fetchJSON(marineURL(spot)),
-    fetchJSON(weatherURL(spot))
+    getJSON(marine),
+    getJSON(weather)
   ]);
 
-  if(token!==requestNumber) return;
+  if(id!==requestId)return;
 
-  forecast={
-    ocean:results[0].status==="fulfilled"?results[0].value:null,
-    weather:results[1].status==="fulfilled"?results[1].value:null
+  data={
+    marine:results[0].status==="fulfilled"?results[0].value:null,
+    weather:results[1].status==="fulfilled"?results[1].value:null,
+    errors:results.filter(r=>r.status==="rejected")
+      .map(r=>r.reason?.message||"Unavailable")
   };
 
-  lastFetchTime=Date.now();
-
-  if(forecast.ocean || forecast.weather) {
-    forecastCache.set(spot.id,{
-      time:lastFetchTime,
-      data:forecast
-    });
-  }
-
-  $("refreshButton").disabled=false;
-  renderForecast();
+  lastFetch=Date.now();
+  $("refreshBtn").disabled=false;
+  render();
 }
 
-$("refreshButton").addEventListener("click",()=>{
-  fetchForecast(true);
-});
-
-function renderForecast() {
-  renderForecastHeader();
-
-  const metrics=currentMetrics();
-  $("forecastMetrics").innerHTML=metrics;
-  $("homeMetrics").innerHTML=metrics;
-
-  const ocean=forecast?.ocean?.current||{};
-  const weather=forecast?.weather?.current||{};
-
-  const hasMarine=valid(ocean.wave_height);
-  const hasWind=valid(weather.wind_speed_10m);
-
-  const status=forecast
-    ?`Checked ${new Date(lastFetchTime).toLocaleTimeString()} · Marine: ${hasMarine?"available":"unavailable"} · Wind: ${hasWind?"available":"unavailable"}`
-    :"Waiting for model data...";
-
-  $("dataStatus").textContent=status;
-  $("homeDataStatus").textContent=status;
-
-  let notes=[];
-
-  if(hasMarine) {
-    notes.push(
-      `Modeled significant wave height is ${formatWave(ocean.wave_height)}.`
-    );
-    if(valid(ocean.wave_period)) {
-      notes.push(`Wave period is ${formatPeriod(ocean.wave_period)}.`);
-    }
-  } else {
-    notes.push("Marine data is unavailable for this location.");
-  }
-
-  if(hasWind) {
-    notes.push(
-      `Modeled wind is ${formatWind(weather.wind_speed_10m)} from ${compass(weather.wind_direction_10m)}.`
-    );
-  } else {
-    notes.push("Wind data is unavailable.");
-  }
-
-  notes.push("These values are regional model estimates, not exact breaking-wave heights.");
-
-  $("analysisText").textContent=notes.join(" ");
-  $("homeInsight").textContent=notes.join(" ");
-
-  renderCharts();
-  renderHourlyTable();
+function at(hourly,key,time){
+  const index=hourly?.time?.indexOf(time)??-1;
+  return index<0?null:hourly[key]?.[index]??null;
 }
 
-function destroyCharts() {
-  if(waveChart) {
-    waveChart.destroy();
-    waveChart=null;
-  }
-  if(windChart) {
-    windChart.destroy();
-    windChart=null;
-  }
+function render(){
+  const m=data?.marine?.current||{};
+  const w=data?.weather?.current||{};
+  const d=data?.weather?.daily||{};
+  const mh=data?.marine?.hourly||{};
+
+  $("homeName").textContent=selected.name;
+  $("forecastName").textContent=selected.name;
+  $("forecastRegion").textContent=selected.region;
+  $("saveBtn").textContent=favorites.includes(selected.id)?"★ Saved":"☆ Save";
+
+  $("featured").innerHTML=[0,1,7,12,26,34]
+    .map(i=>spotCard(SPOTS[i])).join("");
+
+  const basics=[
+    metric("Wave height",wave(m.wave_height),"Significant model height"),
+    metric("Wave period",period(m.wave_period),"Wave timing"),
+    metric("Wind speed",wind(w.wind_speed_10m),compass(w.wind_direction_10m)+" wind"),
+    metric("Water temperature",temp(m.sea_surface_temperature),"Sea surface")
+  ].join("");
+
+  $("homeMetrics").innerHTML=basics;
+  $("mainMetrics").innerHTML=basics;
+
+  const latest=mh.time?.[0]||null;
+
+  $("detailMetrics").innerHTML=[
+    metric("Primary swell",wave(m.swell_wave_height),"Swell height"),
+    metric("Primary period",period(m.swell_wave_period),"Seconds"),
+    metric("Primary direction",direction(m.swell_wave_direction),compass(m.swell_wave_direction)),
+    metric("Wave direction",direction(m.wave_direction),compass(m.wave_direction)),
+    metric("Secondary swell",wave(at(mh,"secondary_swell_wave_height",latest)),"Additional component"),
+    metric("Secondary period",period(at(mh,"secondary_swell_wave_period",latest)),"Seconds"),
+    metric("Secondary direction",direction(at(mh,"secondary_swell_wave_direction",latest)),"Degrees"),
+    metric("Air temperature",temp(w.temperature_2m),"2 m air"),
+    metric("Feels like",temp(w.apparent_temperature),"Apparent temperature"),
+    metric("Wind gusts",wind(w.wind_gusts_10m),"10 m gusts"),
+    metric("Wind direction",direction(w.wind_direction_10m),compass(w.wind_direction_10m)),
+    metric("Humidity",valid(w.relative_humidity_2m)?Math.round(w.relative_humidity_2m)+"%":"—","Relative humidity"),
+    metric("Pressure",valid(w.surface_pressure)?Math.round(w.surface_pressure)+" hPa":"—","Surface pressure"),
+    metric("Cloud cover",valid(w.cloud_cover)?Math.round(w.cloud_cover)+"%":"—","Sky coverage"),
+    metric("Sunrise",timeLabel(d.sunrise?.[0]),"Local time"),
+    metric("Sunset",timeLabel(d.sunset?.[0]),"Local time")
+  ].join("");
+
+  $("forecastStatus").textContent=data
+    ?"Checked "+new Date(lastFetch).toLocaleTimeString()+
+    " · Marine "+(data.marine?"available":"unavailable")+
+    " · Weather "+(data.weather?"available":"unavailable")+
+    (data.errors.length?" · "+data.errors.join("; "):"")
+    :"Waiting for forecast data...";
+
+  renderHourly();
+  if(activePage==="forecast")drawAll();
 }
 
-function updateChartColors() {
-  if(forecast) renderCharts();
-}
+function renderHourly(){
+  const m=data?.marine?.hourly;
+  const w=data?.weather?.hourly;
 
-function chartColor() {
-  return getComputedStyle(document.body)
-    .getPropertyValue("--accent").trim()||"#0a8490";
-}
+  const times=m?.time||w?.time||[];
+  const start=Math.max(0,times.findIndex(t=>
+    new Date(t).getTime()>=Date.now()-3600000
+  ));
 
-function createLineChart(id,times,values,label) {
-  if(typeof Chart==="undefined") return null;
-
-  const labels=[];
-  const points=[];
-
-  for(let i=0;i<times.length;i+=3) {
-    labels.push(times[i].replace("T"," "));
-    points.push(valid(values[i])?values[i]:null);
-  }
-
-  return new Chart($(id),{
-    type:"line",
-    data:{
-      labels,
-      datasets:[{
-        label,
-        data:points,
-        borderColor:chartColor(),
-        backgroundColor:"rgba(10,132,144,.12)",
-        fill:true,
-        tension:.3,
-        pointRadius:0,
-        borderWidth:2.5,
-        spanGaps:false
-      }]
-    },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{maxTicksLimit:7}},
-        y:{beginAtZero:true}
-      }
-    }
-  });
-}
-
-function renderCharts() {
-  destroyCharts();
-
-  const ocean=forecast?.ocean?.hourly;
-  const weather=forecast?.weather?.hourly;
-
-  $("waveChartMessage").textContent="";
-  $("windChartMessage").textContent="";
-
-  if(typeof Chart==="undefined") {
-    $("waveChartMessage").textContent="Chart library unavailable.";
-    $("windChartMessage").textContent="Chart library unavailable.";
-    return;
-  }
-
-  if(ocean?.time && ocean?.wave_height) {
-    const values=ocean.wave_height.map(v=>
-      valid(v)?(units==="metric"?v:v*3.28084):null
-    );
-
-    waveChart=createLineChart(
-      "waveChart",ocean.time,values,"Wave height"
-    );
-  } else {
-    $("waveChartMessage").textContent="Marine chart unavailable.";
-  }
-
-  if(weather?.time && weather?.wind_speed_10m) {
-    const values=weather.wind_speed_10m.map(v=>
-      valid(v)?(units==="metric"?v:v/1.609344):null
-    );
-
-    windChart=createLineChart(
-      "windChart",weather.time,values,"Wind speed"
-    );
-  } else {
-    $("windChartMessage").textContent="Wind chart unavailable.";
-  }
-}
-
-function hourlyValue(data,key,index) {
-  const value=data?.[key]?.[index];
-  return valid(value)?value:null;
-}
-
-function renderHourlyTable() {
-  const ocean=forecast?.ocean?.hourly;
-  const weather=forecast?.weather?.hourly;
-
-  const times=ocean?.time||weather?.time||[];
-
-  if(!times.length) {
-    $("hourlyRows").innerHTML=
-      '<tr><td colspan="6">Hourly data unavailable.</td></tr>';
-    return;
-  }
-
-  const rows=[];
-  const now=Date.now();
-
-  for(let i=0;i<times.length && rows.length<48;i++) {
-    const timestamp=new Date(times[i]).getTime();
-    if(timestamp<now-3600000) continue;
-
-    const time=times[i];
-    const oi=ocean?.time?.indexOf(time)??-1;
-    const wi=weather?.time?.indexOf(time)??-1;
-
-    const wave=oi>=0?hourlyValue(ocean,"wave_height",oi):null;
-    const period=oi>=0?hourlyValue(ocean,"wave_period",oi):null;
-    const direction=oi>=0?hourlyValue(ocean,"wave_direction",oi):null;
-    const wind=wi>=0?hourlyValue(weather,"wind_speed_10m",wi):null;
-    const windDirection=wi>=0?hourlyValue(weather,"wind_direction_10m",wi):null;
-
-    rows.push(`
-      <tr>
-        <td>${time.replace("T"," ")}</td>
-        <td>${formatWave(wave)}</td>
-        <td>${formatPeriod(period)}</td>
-        <td>${formatDirection(direction)}</td>
-        <td>${formatWind(wind)}</td>
-        <td>${compass(windDirection)}</td>
-      </tr>
-    `);
-  }
+  const rows=times.slice(start,start+72).map(t=>`
+    <tr>
+      <td>${timeLabel(t)}</td>
+      <td>${wave(at(m,"wave_height",t))}</td>
+      <td>${period(at(m,"wave_period",t))}</td>
+      <td>${wave(at(m,"swell_wave_height",t))}</td>
+      <td>${wave(at(m,"secondary_swell_wave_height",t))}</td>
+      <td>${temp(at(m,"sea_surface_temperature",t))}</td>
+      <td>${wind(at(w,"wind_speed_10m",t))}</td>
+      <td>${wind(at(w,"wind_gusts_10m",t))}</td>
+      <td>${level(at(m,"sea_level_height_msl",t))}</td>
+    </tr>
+  `);
 
   $("hourlyRows").innerHTML=rows.join("")||
-    '<tr><td colspan="6">No upcoming data.</td></tr>';
+    '<tr><td colspan="9">Hourly forecast unavailable.</td></tr>';
 }
 
-function initialize() {
-  $("unitSelect").value=units;
-  applyTheme();
-  renderForecastHeader();
-  updateCounts();
-  renderFeatured();
-  renderSpots();
-  renderFavorites();
-  renderForecast();
+/* INTERACTIVE CANVAS CHARTS */
 
-  const page=location.hash.replace("#","");
-  if(["home","explore","forecast","favorites","settings"].includes(page)) {
-    go(page);
+function series(kind){
+  const m=data?.marine?.hourly;
+  const w=data?.weather?.hourly;
+
+  if(kind==="wave")return {
+    times:m?.time||[],
+    values:m?.wave_height||[],
+    format:wave,
+    convert:v=>units==="us"?v*3.28084:v
+  };
+
+  if(kind==="tide")return {
+    times:m?.time||[],
+    values:m?.sea_level_height_msl||[],
+    format:level,
+    convert:v=>v
+  };
+
+  if(kind==="wind")return {
+    times:w?.time||[],
+    values:w?.wind_speed_10m||[],
+    format:wind,
+    convert:v=>units==="us"?v/1.609344:v
+  };
+
+  return {
+    times:m?.time||[],
+    values:m?.sea_surface_temperature||[],
+    format:temp,
+    convert:v=>units==="us"?v*9/5+32:v
+  };
+}
+
+function drawAll(){
+  ["wave","tide","wind","water"].forEach(drawChart);
+}
+
+function drawChart(kind){
+  const s=series(kind);
+  const canvas=$(kind+"Plot");
+  const view=$(kind+"View");
+  const slider=$(kind+"Slider");
+  const readout=$(kind+"Readout");
+
+  if(!canvas)return;
+
+  const n=s.times.length;
+  const step=32;
+  const left=52;
+  const right=25;
+  const top=20;
+  const bottom=40;
+  const height=250;
+
+  const width=Math.max(
+    view.clientWidth-2,
+    left+right+Math.max(1,n-1)*step
+  );
+
+  const dpr=window.devicePixelRatio||1;
+
+  canvas.style.width=width+"px";
+  canvas.style.height=height+"px";
+  canvas.width=Math.round(width*dpr);
+  canvas.height=Math.round(height*dpr);
+
+  const ctx=canvas.getContext("2d");
+  ctx.scale(dpr,dpr);
+
+  const css=getComputedStyle(document.body);
+  const ink=css.getPropertyValue("--ink").trim();
+  const muted=css.getPropertyValue("--muted").trim();
+  const line=css.getPropertyValue("--line").trim();
+
+  ctx.clearRect(0,0,width,height);
+  ctx.font="11px DM Sans, sans-serif";
+  ctx.textBaseline="middle";
+
+  const available=s.values
+    .filter(valid)
+    .map(s.convert);
+
+  slider.max=Math.max(0,n-1);
+
+  if(!available.length){
+    ctx.fillStyle=muted;
+    ctx.fillText("Forecast data unavailable for this chart.",25,110);
+    readout.textContent="No model values available";
+    return;
   }
 
-  fetchForecast();
+  let min=Math.min(...available);
+  let max=Math.max(...available);
+  const padding=(max-min||1)*.2;
 
-  setInterval(()=>{
-    if(!document.hidden) fetchForecast(true);
-  },30*60*1000);
+  min-=padding;
+  max+=padding;
 
-  document.addEventListener("visibilitychange",()=>{
-    if(!document.hidden && Date.now()-lastFetchTime>20*60*1000) {
-      fetchForecast();
+  if(kind==="wave"||kind==="wind"){
+    min=Math.max(0,min);
+  }
+
+  const chartHeight=height-top-bottom;
+  const x=i=>left+i*step;
+  const y=v=>top+(max-v)/(max-min)*chartHeight;
+
+  for(let k=0;k<=4;k++){
+    const value=min+(max-min)*k/4;
+    const yy=y(value);
+
+    ctx.strokeStyle=line;
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(left,yy);
+    ctx.lineTo(width-right,yy);
+    ctx.stroke();
+
+    ctx.fillStyle=muted;
+    ctx.textAlign="right";
+    ctx.fillText(value.toFixed(1),left-8,yy);
+  }
+
+  ctx.textAlign="center";
+
+  for(let i=0;i<n;i+=5){
+    ctx.fillStyle=muted;
+    ctx.fillText(timeLabel(s.times[i]),x(i),height-15);
+  }
+
+  ctx.strokeStyle=ink;
+  ctx.lineWidth=2.5;
+  ctx.lineJoin="round";
+  ctx.beginPath();
+
+  let drawing=false;
+
+  s.values.forEach((raw,i)=>{
+    if(!valid(raw)){
+      drawing=false;
+      return;
     }
+
+    const value=s.convert(raw);
+
+    if(!drawing)ctx.moveTo(x(i),y(value));
+    else ctx.lineTo(x(i),y(value));
+
+    drawing=true;
   });
+
+  ctx.stroke();
+
+  const index=Math.min(
+    n-1,
+    Math.max(0,Number(slider.value)||0)
+  );
+
+  const raw=s.values[index];
+  const value=valid(raw)?s.convert(raw):null;
+
+  ctx.strokeStyle=muted;
+  ctx.lineWidth=1;
+  ctx.setLineDash([5,5]);
+  ctx.beginPath();
+  ctx.moveTo(x(index),top);
+  ctx.lineTo(x(index),height-bottom);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  if(valid(value)){
+    ctx.fillStyle=ink;
+    ctx.beginPath();
+    ctx.arc(x(index),y(value),5,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  readout.innerHTML=`
+    <span>${timeLabel(s.times[index])}</span>
+    <strong>${s.format(raw)}</strong>
+  `;
+
+  canvas.onpointermove=e=>{
+    if(e.pointerType!=="mouse"&&!e.buttons)return;
+
+    const rect=canvas.getBoundingClientRect();
+    const i=Math.round((e.clientX-rect.left-left)/step);
+
+    slider.value=Math.max(0,Math.min(n-1,i));
+    drawChart(kind);
+  };
+
+  canvas.onclick=e=>{
+    const rect=canvas.getBoundingClientRect();
+    slider.value=Math.max(
+      0,
+      Math.min(n-1,Math.round((e.clientX-rect.left-left)/step))
+    );
+    drawChart(kind);
+  };
+
+  slider.oninput=()=>{
+    drawChart(kind);
+    const target=x(Number(slider.value))-view.clientWidth/2;
+    view.scrollLeft=target;
+  };
 }
 
-initialize();
+/* EVENTS */
+
+document.addEventListener("click",e=>{
+  const nav=e.target.closest("[data-go]");
+  if(nav)go(nav.dataset.go);
+
+  const spot=e.target.closest("[data-select]");
+  if(spot)selectSpot(Number(spot.dataset.select));
+
+  const favorite=e.target.closest("[data-favorite]");
+  if(favorite)toggleFavorite(Number(favorite.dataset.favorite));
+
+  const scroll=e.target.closest("[data-scroll]");
+  if(scroll){
+    const [kind,direction]=scroll.dataset.scroll.split(":");
+    const view=$(kind+"View");
+    view.scrollBy({
+      left:Number(direction)*view.clientWidth*.7,
+      behavior:"smooth"
+    });
+  }
+});
+
+$("search").addEventListener("input",renderSpots);
+$("region").addEventListener("change",renderSpots);
+
+$("saveBtn").addEventListener("click",()=>{
+  toggleFavorite(selected.id);
+});
+
+$("refreshBtn").addEventListener("click",()=>{
+  load();
+});
+
+function applyTheme(){
+  document.body.classList.toggle("dark",theme==="dark");
+  $("themeSelect").value=theme;
+  localStorage.setItem("swellTheme",theme);
+  drawAll();
+}
+
+$("themeBtn").addEventListener("click",()=>{
+  theme=theme==="light"?"dark":"light";
+  applyTheme();
+});
+
+$("themeSelect").addEventListener("change",e=>{
+  theme=e.target.value;
+  applyTheme();
+});
+
+$("unitSelect").addEventListener("change",e=>{
+  units=e.target.value;
+  localStorage.setItem("swellUnits",units);
+  render();
+});
+
+window.addEventListener("resize",()=>{
+  if(activePage==="forecast")drawAll();
+});
+
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden&&Date.now()-lastFetch>20*60*1000){
+    load();
+  }
+});
+
+/* START */
+
+$("unitSelect").value=units;
+applyTheme();
+renderSpots();
+renderSaved();
+render();
+
+const initial=location.hash.slice(1);
+go(["home","forecast","explore","favorites","settings"].includes(initial)
+  ?initial:"home");
+
+load();
+
+setInterval(()=>{
+  if(!document.hidden)load();
+},30*60*1000);
 </script>
+
 </body>
 </html>
-
-<!-- SWELL 3.1 — ADVANCED OCEAN CONDITIONS -->
-<section class="page" id="ocean-details">
-  <div class="eyebrow">SWELL ocean intelligence</div>
-  <h1 class="page-title">Ocean conditions.</h1>
-  <p class="muted page-intro" id="oceanLocation">
-    Detailed marine and atmospheric conditions.
-  </p>
-
-  <div class="metric-grid" id="advancedMetrics"></div>
-
-  <div class="section-heading">
-    <div>
-      <div class="eyebrow">Swell breakdown</div>
-      <h2>What's moving through the ocean</h2>
-    </div>
-  </div>
-
-  <div class="forecast-columns">
-    <div class="card card-pad">
-      <h3>Primary swell</h3>
-      <div class="metric-grid" id="primarySwell"></div>
-    </div>
-
-    <div class="card card-pad">
-      <h3>Secondary swell</h3>
-      <div class="metric-grid" id="secondarySwell"></div>
-    </div>
-  </div>
-
-  <div class="section-heading">
-    <h2>Daylight and atmosphere</h2>
-  </div>
-
-  <div class="card card-pad">
-    <div class="metric-grid" id="atmosphereMetrics"></div>
-  </div>
-
-  <p class="small" id="advancedStatus" style="margin-top:16px">
-    Waiting for ocean conditions...
-  </p>
-</section>
