@@ -1338,3 +1338,286 @@ function weatherURL(spot) {
   url.searchParams.set("current","wind_speed_10m,wind_direction_10m");
   url.searchParams.set("hourly","wind_speed_10m,wind_direction_10m");
   url.searchParams.set
+
+  url.searchParams.set("wind_speed_unit","kmh");
+  url.searchParams.set("forecast_days","7");
+  url.searchParams.set("timezone","auto");
+  return url.toString();
+}
+
+async function fetchForecast(force=false) {
+  const token=++requestNumber;
+  const spot={...selected};
+  const cached=forecastCache.get(spot.id);
+
+  if(!force && cached && Date.now()-cached.time<20*60*1000) {
+    forecast=cached.data;
+    lastFetchTime=cached.time;
+    renderForecast();
+    return;
+  }
+
+  $("dataStatus").textContent="Loading forecast data...";
+  $("homeDataStatus").textContent="Loading forecast data...";
+  $("refreshButton").disabled=true;
+
+  const results=await Promise.allSettled([
+    fetchJSON(marineURL(spot)),
+    fetchJSON(weatherURL(spot))
+  ]);
+
+  if(token!==requestNumber) return;
+
+  forecast={
+    ocean:results[0].status==="fulfilled"?results[0].value:null,
+    weather:results[1].status==="fulfilled"?results[1].value:null
+  };
+
+  lastFetchTime=Date.now();
+
+  if(forecast.ocean || forecast.weather) {
+    forecastCache.set(spot.id,{
+      time:lastFetchTime,
+      data:forecast
+    });
+  }
+
+  $("refreshButton").disabled=false;
+  renderForecast();
+}
+
+$("refreshButton").addEventListener("click",()=>{
+  fetchForecast(true);
+});
+
+function renderForecast() {
+  renderForecastHeader();
+
+  const metrics=currentMetrics();
+  $("forecastMetrics").innerHTML=metrics;
+  $("homeMetrics").innerHTML=metrics;
+
+  const ocean=forecast?.ocean?.current||{};
+  const weather=forecast?.weather?.current||{};
+
+  const hasMarine=valid(ocean.wave_height);
+  const hasWind=valid(weather.wind_speed_10m);
+
+  const status=forecast
+    ?`Checked ${new Date(lastFetchTime).toLocaleTimeString()} · Marine: ${hasMarine?"available":"unavailable"} · Wind: ${hasWind?"available":"unavailable"}`
+    :"Waiting for model data...";
+
+  $("dataStatus").textContent=status;
+  $("homeDataStatus").textContent=status;
+
+  let notes=[];
+
+  if(hasMarine) {
+    notes.push(
+      `Modeled significant wave height is ${formatWave(ocean.wave_height)}.`
+    );
+    if(valid(ocean.wave_period)) {
+      notes.push(`Wave period is ${formatPeriod(ocean.wave_period)}.`);
+    }
+  } else {
+    notes.push("Marine data is unavailable for this location.");
+  }
+
+  if(hasWind) {
+    notes.push(
+      `Modeled wind is ${formatWind(weather.wind_speed_10m)} from ${compass(weather.wind_direction_10m)}.`
+    );
+  } else {
+    notes.push("Wind data is unavailable.");
+  }
+
+  notes.push("These values are regional model estimates, not exact breaking-wave heights.");
+
+  $("analysisText").textContent=notes.join(" ");
+  $("homeInsight").textContent=notes.join(" ");
+
+  renderCharts();
+  renderHourlyTable();
+}
+
+function destroyCharts() {
+  if(waveChart) {
+    waveChart.destroy();
+    waveChart=null;
+  }
+  if(windChart) {
+    windChart.destroy();
+    windChart=null;
+  }
+}
+
+function updateChartColors() {
+  if(forecast) renderCharts();
+}
+
+function chartColor() {
+  return getComputedStyle(document.body)
+    .getPropertyValue("--accent").trim()||"#0a8490";
+}
+
+function createLineChart(id,times,values,label) {
+  if(typeof Chart==="undefined") return null;
+
+  const labels=[];
+  const points=[];
+
+  for(let i=0;i<times.length;i+=3) {
+    labels.push(times[i].replace("T"," "));
+    points.push(valid(values[i])?values[i]:null);
+  }
+
+  return new Chart($(id),{
+    type:"line",
+    data:{
+      labels,
+      datasets:[{
+        label,
+        data:points,
+        borderColor:chartColor(),
+        backgroundColor:"rgba(10,132,144,.12)",
+        fill:true,
+        tension:.3,
+        pointRadius:0,
+        borderWidth:2.5,
+        spanGaps:false
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{maxTicksLimit:7}},
+        y:{beginAtZero:true}
+      }
+    }
+  });
+}
+
+function renderCharts() {
+  destroyCharts();
+
+  const ocean=forecast?.ocean?.hourly;
+  const weather=forecast?.weather?.hourly;
+
+  $("waveChartMessage").textContent="";
+  $("windChartMessage").textContent="";
+
+  if(typeof Chart==="undefined") {
+    $("waveChartMessage").textContent="Chart library unavailable.";
+    $("windChartMessage").textContent="Chart library unavailable.";
+    return;
+  }
+
+  if(ocean?.time && ocean?.wave_height) {
+    const values=ocean.wave_height.map(v=>
+      valid(v)?(units==="metric"?v:v*3.28084):null
+    );
+
+    waveChart=createLineChart(
+      "waveChart",ocean.time,values,"Wave height"
+    );
+  } else {
+    $("waveChartMessage").textContent="Marine chart unavailable.";
+  }
+
+  if(weather?.time && weather?.wind_speed_10m) {
+    const values=weather.wind_speed_10m.map(v=>
+      valid(v)?(units==="metric"?v:v/1.609344):null
+    );
+
+    windChart=createLineChart(
+      "windChart",weather.time,values,"Wind speed"
+    );
+  } else {
+    $("windChartMessage").textContent="Wind chart unavailable.";
+  }
+}
+
+function hourlyValue(data,key,index) {
+  const value=data?.[key]?.[index];
+  return valid(value)?value:null;
+}
+
+function renderHourlyTable() {
+  const ocean=forecast?.ocean?.hourly;
+  const weather=forecast?.weather?.hourly;
+
+  const times=ocean?.time||weather?.time||[];
+
+  if(!times.length) {
+    $("hourlyRows").innerHTML=
+      '<tr><td colspan="6">Hourly data unavailable.</td></tr>';
+    return;
+  }
+
+  const rows=[];
+  const now=Date.now();
+
+  for(let i=0;i<times.length && rows.length<48;i++) {
+    const timestamp=new Date(times[i]).getTime();
+    if(timestamp<now-3600000) continue;
+
+    const time=times[i];
+    const oi=ocean?.time?.indexOf(time)??-1;
+    const wi=weather?.time?.indexOf(time)??-1;
+
+    const wave=oi>=0?hourlyValue(ocean,"wave_height",oi):null;
+    const period=oi>=0?hourlyValue(ocean,"wave_period",oi):null;
+    const direction=oi>=0?hourlyValue(ocean,"wave_direction",oi):null;
+    const wind=wi>=0?hourlyValue(weather,"wind_speed_10m",wi):null;
+    const windDirection=wi>=0?hourlyValue(weather,"wind_direction_10m",wi):null;
+
+    rows.push(`
+      <tr>
+        <td>${time.replace("T"," ")}</td>
+        <td>${formatWave(wave)}</td>
+        <td>${formatPeriod(period)}</td>
+        <td>${formatDirection(direction)}</td>
+        <td>${formatWind(wind)}</td>
+        <td>${compass(windDirection)}</td>
+      </tr>
+    `);
+  }
+
+  $("hourlyRows").innerHTML=rows.join("")||
+    '<tr><td colspan="6">No upcoming data.</td></tr>';
+}
+
+function initialize() {
+  $("unitSelect").value=units;
+  applyTheme();
+  renderForecastHeader();
+  updateCounts();
+  renderFeatured();
+  renderSpots();
+  renderFavorites();
+  renderForecast();
+
+  const page=location.hash.replace("#","");
+  if(["home","explore","forecast","favorites","settings"].includes(page)) {
+    go(page);
+  }
+
+  fetchForecast();
+
+  setInterval(()=>{
+    if(!document.hidden) fetchForecast(true);
+  },30*60*1000);
+
+  document.addEventListener("visibilitychange",()=>{
+    if(!document.hidden && Date.now()-lastFetchTime>20*60*1000) {
+      fetchForecast();
+    }
+  });
+}
+
+initialize();
+</script>
+</body>
+</html>
