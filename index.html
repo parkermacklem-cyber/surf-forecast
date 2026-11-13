@@ -1,1163 +1,654 @@
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101112">
-<title>SWELL — Ocean Intelligence</title>
+/*
+  TRADESCAN V4
+  Quantitative Trading Research Engine
 
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  Features:
+  - 20 stock watchlist
+  - EMA 9 / 20 / 50
+  - RSI 14
+  - MACD
+  - ATR 14
+  - Bollinger Bands
+  - Relative volume
+  - Momentum analysis
+  - Trend detection
+  - 0-100 weighted score
+  - Signal explanations
+  - Paper trade simulation
+  - Risk / reward calculations
+*/
 
-<style>
-:root {
-  --bg:#f6f7f7;
-  --card:#fff;
-  --ink:#111416;
-  --muted:#777f84;
-  --line:#e2e6e7;
-  --sub:#f0f2f2;
-}
-body.dark {
-  --bg:#101214;
-  --card:#1b1e20;
-  --ink:#f5f6f6;
-  --muted:#a0a7ab;
-  --line:#363b3e;
-  --sub:#272b2e;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"DM Sans",sans-serif}
-button,input,select{font:inherit}
-button{cursor:pointer}
-h1,h2,h3,.brand,.big{font-family:"Space Grotesk",sans-serif;letter-spacing:-.05em}
-h1{font-size:clamp(38px,5vw,65px);line-height:1.05;margin:10px 0}
-h2{font-size:29px;margin:0}
-h3{font-size:20px;margin:0 0 10px}
-p{line-height:1.6}
-.wrap{max-width:1450px;margin:auto;padding:0 24px}
-.top{position:sticky;top:0;z-index:1000;background:var(--card);border-bottom:1px solid var(--line)}
-.topin{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:15px}
-.brand{font-size:30px;font-weight:800;letter-spacing:-2px}
-.brand span{color:var(--muted)}
-nav{display:flex;gap:4px}
-nav button{border:0;background:transparent;color:var(--muted);padding:12px 15px;border-radius:10px;font-size:13px;font-weight:800}
-nav button.active,nav button:hover{background:var(--sub);color:var(--ink)}
-.btn{border:1px solid var(--ink);background:var(--ink);color:var(--bg);padding:12px 17px;border-radius:11px;font-size:13px;font-weight:800}
-.btn.alt{background:var(--card);color:var(--ink);border-color:var(--line)}
-.btn.small{padding:9px 12px}
-.page{display:none;padding:35px 0 70px}
-.page.active{display:block}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px}
-.pad{padding:24px}
-.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:1.8px;font-weight:800;color:var(--muted)}
-.muted{color:var(--muted)}
-.tiny{font-size:12px;color:var(--muted)}
-.hero{background:var(--ink);color:var(--bg);border-radius:23px;padding:65px;min-height:320px;position:relative;overflow:hidden}
-.hero h1{font-size:clamp(45px,6vw,85px);max-width:850px}
-.hero p{max-width:570px;opacity:.7}
-.hero .btn{background:var(--bg);color:var(--ink);border-color:var(--bg)}
-.hero:after{content:"";position:absolute;width:350px;height:350px;right:-120px;top:-90px;border:1px solid #9997;border-radius:50%;box-shadow:0 0 0 50px #9992,0 0 0 100px #9992,0 0 0 150px #9992;pointer-events:none}
-.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:35px 0 17px}
-.grid{display:grid;gap:14px}
-.four{grid-template-columns:repeat(4,minmax(0,1fr))}
-.three{grid-template-columns:repeat(3,minmax(0,1fr))}
-.two{grid-template-columns:repeat(2,minmax(0,1fr))}
-.metric{padding:20px;min-width:0}
-.metric .big{font-size:clamp(22px,2.8vw,35px);font-weight:800;margin:13px 0 6px;overflow-wrap:anywhere}
-.feature{padding:22px;display:flex;flex-direction:column;gap:16px}
-.feature strong{font-size:21px;font-family:"Space Grotesk"}
-.feature .bottom{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.toolbar{display:flex;gap:10px;margin:25px 0 18px}
-.field{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:14px}
-.toolbar input{flex:1;min-width:0}
-.mapbox{padding:8px}
-#map{height:420px;border-radius:12px;background:var(--sub)}
-.forecasthead{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.status{font-size:12px;color:var(--muted);margin:16px 0}
-.chartcard{padding:24px;overflow:hidden}
-.charthead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.chartview{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:18px;touch-action:pan-x}
-.chartview::-webkit-scrollbar{height:9px}
-.chartview::-webkit-scrollbar-thumb{background:var(--muted);border-radius:10px}
-.plot{display:block;height:250px;cursor:crosshair}
-.readout{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:13px;font-size:13px}
-.readout strong{font-family:"Space Grotesk";font-size:20px}
-.slider{width:100%;margin:14px 0 0;accent-color:var(--ink)}
-.chartstack{display:grid;gap:17px}
-.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
-table{width:100%;border-collapse:collapse;white-space:nowrap}
-th,td{text-align:left;padding:14px 17px;border-bottom:1px solid var(--line);font-size:12px}
-th{background:var(--sub);color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase}
-tr:last-child td{border-bottom:0}
-.note{padding:20px;font-size:13px;color:var(--muted);line-height:1.8}
-.savedrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:20px 0;border-bottom:1px solid var(--line)}
-.setting{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:23px 0;border-bottom:1px solid var(--line)}
-.footer{padding:30px 0;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
-.toast{position:fixed;bottom:25px;left:50%;transform:translateX(-50%);padding:12px 20px;background:var(--ink);color:var(--bg);border-radius:12px;opacity:0;pointer-events:none;transition:.2s;z-index:2000}
-.toast.show{opacity:1}
-@media(max-width:1000px){.four{grid-template-columns:repeat(2,minmax(0,1fr))}.three{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:700px){
-.wrap{padding:0 15px}
-.topin{flex-wrap:wrap;padding:12px 0;gap:8px}
-nav{order:3;width:100%;overflow:auto}
-nav button{white-space:nowrap;padding:10px}
-.hero{padding:30px;min-height:310px}
-.hero:after{right:-280px}
-.three,.two{grid-template-columns:1fr}
-.metric{padding:15px}
-.metric .big{font-size:26px}
-.toolbar{flex-direction:column}
-#map{height:320px}
-.chartcard{padding:15px}
-.setting{flex-direction:column;align-items:stretch}
-}
-</style>
-</head>
+const API = "https://trade-scanner-api.parkermacklem.workers.dev";
 
-<body>
-
-<header class="top">
-  <div class="wrap topin">
-    <div class="brand">SWELL<span>.</span></div>
-    <nav>
-      <button data-go="home" class="active">Home</button>
-      <button data-go="forecast">Forecast</button>
-      <button data-go="explore">Explore</button>
-      <button data-go="favorites">Favorites</button>
-      <button data-go="settings">Settings</button>
-    </nav>
-    <button class="btn alt small" id="themeBtn">◐</button>
-  </div>
-</header>
-
-<main class="wrap">
-
-<section class="page active" id="home">
-  <div class="hero">
-    <div class="eyebrow">SWELL / Ocean Intelligence</div>
-    <h1>Know the water.<br>Before you go.</h1>
-    <p>Powerful marine forecasting, interactive timelines, and detailed ocean conditions. Everything you need. Nothing you don't.</p>
-    <button class="btn" data-go="forecast">Explore forecast ↗</button>
-  </div>
-
-  <div class="sectionhead">
-    <div>
-      <div class="eyebrow">Current conditions</div>
-      <h2 id="homeName">Manhattan Beach</h2>
-    </div>
-    <button class="btn alt small" data-go="explore">Change spot →</button>
-  </div>
-  <div class="grid four" id="homeMetrics"></div>
-
-  <div class="sectionhead">
-    <div>
-      <div class="eyebrow">Discover</div>
-      <h2>Explore the coastline</h2>
-    </div>
-    <button class="btn alt small" data-go="explore">All spots →</button>
-  </div>
-  <div class="grid three" id="featured"></div>
-</section>
-
-<section class="page" id="forecast">
-  <div class="forecasthead">
-    <div>
-      <div class="eyebrow">Detailed ocean forecast</div>
-      <h1 id="forecastName">Manhattan Beach</h1>
-      <div class="muted" id="forecastRegion">Southern California</div>
-    </div>
-    <div class="actions">
-      <button class="btn alt" id="saveBtn">☆ Save</button>
-      <button class="btn alt" data-go="explore">Change spot</button>
-      <button class="btn" id="refreshBtn">↻ Refresh</button>
-    </div>
-  </div>
-
-  <div class="status" id="forecastStatus">Loading forecast...</div>
-
-  <div class="grid four" id="mainMetrics"></div>
-
-  <div class="sectionhead">
-    <div>
-      <div class="eyebrow">Detailed conditions</div>
-      <h2>Everything happening in the water</h2>
-      <p class="tiny">Marine and weather model estimates, updated from live APIs.</p>
-    </div>
-  </div>
-
-  <div class="grid four" id="detailMetrics"></div>
-
-  <div class="sectionhead">
-    <div>
-      <div class="eyebrow">Interactive forecasting</div>
-      <h2>Explore every hour</h2>
-      <p class="tiny">Scroll charts sideways, move the slider, or hover to inspect exact modeled values.</p>
-    </div>
-  </div>
-
-  <div class="chartstack">
-    <div class="card chartcard">
-      <div class="charthead">
-        <div>
-          <h3>Wave height</h3>
-          <div class="tiny">Significant wave height · not exact breaking-wave height</div>
-        </div>
-        <div class="actions">
-          <button class="btn alt small" data-scroll="wave:-1">←</button>
-          <button class="btn alt small" data-scroll="wave:1">→</button>
-        </div>
-      </div>
-      <div class="chartview" id="waveView"><canvas class="plot" id="wavePlot"></canvas></div>
-      <div class="readout" id="waveReadout"></div>
-      <input class="slider" id="waveSlider" type="range" min="0" max="1" value="0">
-    </div>
-
-    <div class="card chartcard">
-      <div class="charthead">
-        <div>
-          <h3>Sea level / tide trend</h3>
-          <div class="tiny">Modeled sea-level variation · not official local tide predictions</div>
-        </div>
-        <div class="actions">
-          <button class="btn alt small" data-scroll="tide:-1">←</button>
-          <button class="btn alt small" data-scroll="tide:1">→</button>
-        </div>
-      </div>
-      <div class="chartview" id="tideView"><canvas class="plot" id="tidePlot"></canvas></div>
-      <div class="readout" id="tideReadout"></div>
-      <input class="slider" id="tideSlider" type="range" min="0" max="1" value="0">
-    </div>
-
-    <div class="card chartcard">
-      <div class="charthead">
-        <div>
-          <h3>Wind and gusts</h3>
-          <div class="tiny">10-meter wind forecast · interactive hourly values</div>
-        </div>
-        <div class="actions">
-          <button class="btn alt small" data-scroll="wind:-1">←</button>
-          <button class="btn alt small" data-scroll="wind:1">→</button>
-        </div>
-      </div>
-      <div class="chartview" id="windView"><canvas class="plot" id="windPlot"></canvas></div>
-      <div class="readout" id="windReadout"></div>
-      <input class="slider" id="windSlider" type="range" min="0" max="1" value="0">
-    </div>
-
-    <div class="card chartcard">
-      <div class="charthead">
-        <div>
-          <h3>Water temperature</h3>
-          <div class="tiny">Modeled sea-surface temperature</div>
-        </div>
-        <div class="actions">
-          <button class="btn alt small" data-scroll="water:-1">←</button>
-          <button class="btn alt small" data-scroll="water:1">→</button>
-        </div>
-      </div>
-      <div class="chartview" id="waterView"><canvas class="plot" id="waterPlot"></canvas></div>
-      <div class="readout" id="waterReadout"></div>
-      <input class="slider" id="waterSlider" type="range" min="0" max="1" value="0">
-    </div>
-  </div>
-
-  <div class="sectionhead">
-    <div>
-      <div class="eyebrow">Hour by hour</div>
-      <h2>Complete forecast table</h2>
-    </div>
-  </div>
-
-  <div class="card pad">
-    <div class="tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Waves</th>
-            <th>Period</th>
-            <th>Primary swell</th>
-            <th>Secondary swell</th>
-            <th>Water</th>
-            <th>Wind</th>
-            <th>Gusts</th>
-            <th>Sea level</th>
-          </tr>
-        </thead>
-        <tbody id="hourlyRows"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="sectionhead"><h2>About these forecasts</h2></div>
-  <div class="card note">
-    SWELL uses regional marine and atmospheric models. Offshore significant wave height is not the same as breaking surf height. Modeled sea-level changes are not official tide-station predictions. Conditions can differ substantially at individual breaks. Missing data is displayed as — rather than invented.
-  </div>
-</section>
-
-<section class="page" id="explore">
-  <div class="eyebrow">Surf spot directory</div>
-  <h1>Find your break.</h1>
-  <p class="muted">Search the coast and select any location to load its forecast.</p>
-
-  <div class="toolbar">
-    <input class="field" id="search" placeholder="Search spots or regions...">
-    <select class="field" id="region">
-      <option value="all">All regions</option>
-      <option>Southern California</option>
-      <option>Central California</option>
-      <option>Northern California</option>
-      <option>Hawaii</option>
-      <option>East Coast</option>
-    </select>
-  </div>
-
-  <div class="card mapbox"><div id="map"></div></div>
-
-  <div class="sectionhead">
-    <h2>Surf spots</h2>
-    <span class="tiny" id="count"></span>
-  </div>
-
-  <div class="grid three" id="spotGrid"></div>
-</section>
-
-<section class="page" id="favorites">
-  <div class="eyebrow">Saved breaks</div>
-  <h1>Your favorites.</h1>
-  <p class="muted">Your saved locations stay in this browser.</p>
-  <div class="card pad" id="savedList"></div>
-</section>
-
-<section class="page" id="settings">
-  <div class="eyebrow">Personalization</div>
-  <h1>Settings.</h1>
-
-  <div class="card pad">
-    <div class="setting">
-      <div><strong>Appearance</strong><p class="tiny">Choose light or dark mode.</p></div>
-      <select class="field" id="themeSelect">
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select>
-    </div>
-
-    <div class="setting">
-      <div><strong>Measurement units</strong><p class="tiny">Choose your preferred units.</p></div>
-      <select class="field" id="unitSelect">
-        <option value="us">Feet / mph / °F</option>
-        <option value="metric">Meters / km/h / °C</option>
-      </select>
-    </div>
-
-    <div class="setting">
-      <div><strong>Forecast data</strong><p class="tiny">Marine and atmospheric models</p></div>
-      <strong>Open-Meteo</strong>
-    </div>
-
-    <div class="setting">
-      <div><strong>Automatic refresh</strong><p class="tiny">Check for updates every 30 minutes while the site is open.</p></div>
-      <strong>Enabled</strong>
-    </div>
-  </div>
-</section>
-
-</main>
-
-<footer class="footer">
-  <div class="wrap">
-    <strong>SWELL.</strong> © 2026 · Ocean Intelligence · Open-Meteo data · OpenStreetMap
-  </div>
-</footer>
-
-<div class="toast" id="toast"></div>
-
-<script>
-"use strict";
-
-const $=id=>document.getElementById(id);
-
-const RAW=[
-["Manhattan Beach",33.8847,-118.4109,"Southern California"],
-["El Porto",33.9000,-118.4220,"Southern California"],
-["Hermosa Beach",33.8622,-118.3995,"Southern California"],
-["Redondo Beach",33.8492,-118.3884,"Southern California"],
-["Torrance Beach",33.8135,-118.3910,"Southern California"],
-["Venice Beach",33.985,-118.472,"Southern California"],
-["Santa Monica",34.0085,-118.498,"Southern California"],
-["Malibu Surfrider",34.0337,-118.677,"Southern California"],
-["Zuma Beach",34.0215,-118.831,"Southern California"],
-["County Line",34.052,-118.965,"Southern California"],
-["Rincon",34.373,-119.476,"Southern California"],
-["C Street Ventura",34.277,-119.307,"Southern California"],
-["Huntington Beach",33.655,-118.002,"Southern California"],
-["Newport Beach",33.607,-117.930,"Southern California"],
-["The Wedge",33.593,-117.882,"Southern California"],
-["Salt Creek",33.476,-117.722,"Southern California"],
-["Trestles",33.384,-117.593,"Southern California"],
-["San Onofre",33.371,-117.568,"Southern California"],
-["Oceanside",33.196,-117.380,"Southern California"],
-["Swamis",33.035,-117.293,"Southern California"],
-["Cardiff Reef",33.020,-117.285,"Southern California"],
-["Blacks Beach",32.890,-117.253,"Southern California"],
-["La Jolla Shores",32.855,-117.257,"Southern California"],
-["Windansea",32.831,-117.281,"Southern California"],
-["Pacific Beach",32.797,-117.257,"Southern California"],
-["Ocean Beach San Diego",32.749,-117.253,"Southern California"],
-["Steamer Lane",36.951,-122.026,"Central California"],
-["Pleasure Point",36.952,-121.970,"Central California"],
-["Morro Bay",35.370,-120.867,"Central California"],
-["Pismo Beach",35.138,-120.643,"Central California"],
-["Ocean Beach SF",37.759,-122.511,"Northern California"],
-["Mavericks",37.494,-122.500,"Northern California"],
-["Fort Point",37.810,-122.477,"Northern California"],
-["Pacifica",37.612,-122.496,"Northern California"],
-["Pipeline",21.665,-158.053,"Hawaii"],
-["Waimea Bay",21.641,-158.065,"Hawaii"],
-["Sunset Beach",21.679,-158.040,"Hawaii"],
-["Haleiwa",21.595,-158.105,"Hawaii"],
-["Honolua Bay",21.013,-156.639,"Hawaii"],
-["Hookipa",20.934,-156.357,"Hawaii"],
-["Cocoa Beach",28.320,-80.607,"East Coast"],
-["New Smyrna Beach",29.026,-80.918,"East Coast"],
-["Sebastian Inlet",27.860,-80.448,"East Coast"],
-["Outer Banks",35.573,-75.466,"East Coast"],
-["Montauk",41.035,-71.955,"East Coast"],
-["Rockaway Beach",40.583,-73.817,"East Coast"]
+const WATCHLIST = [
+  "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL",
+  "META", "AVGO", "TSLA", "JPM", "V",
+  "MA", "WMT", "COST", "NFLX", "AMD",
+  "ORCL", "CRM", "BAC", "XOM", "LLY"
 ];
 
-const SPOTS=RAW.map((s,id)=>({
-  id,name:s[0],lat:s[1],lon:s[2],region:s[3]
-}));
-
-function stored(key,fallback){
-  try {
-    const value=JSON.parse(localStorage.getItem(key));
-    return value===null?fallback:value;
-  } catch {return fallback;}
-}
-
-let favorites=stored("swellFavorites",[]);
-if(!Array.isArray(favorites))favorites=[];
-
-let selectedId=stored("swellSelectedSpot",0);
-let selected=SPOTS[selectedId]||SPOTS[0];
-
-let theme=localStorage.getItem("swellTheme")||"light";
-let units=localStorage.getItem("swellUnits")||"us";
-
-let data=null;
-let map=null;
-let markers=[];
-let requestId=0;
-let lastFetch=0;
-let activePage="home";
-
-const valid=v=>typeof v==="number"&&Number.isFinite(v);
-
-function wave(v){
-  if(!valid(v))return "—";
-  return units==="us"
-    ?(v*3.28084).toFixed(1)+" ft"
-    :v.toFixed(1)+" m";
-}
-
-function wind(v){
-  if(!valid(v))return "—";
-  return units==="us"
-    ?Math.round(v/1.609344)+" mph"
-    :Math.round(v)+" km/h";
-}
-
-function temp(v){
-  if(!valid(v))return "—";
-  return units==="us"
-    ?Math.round(v*9/5+32)+"°F"
-    :Math.round(v)+"°C";
-}
-
-function period(v){
-  return valid(v)?v.toFixed(1)+" s":"—";
-}
-
-function direction(v){
-  return valid(v)?Math.round(v)+"°":"—";
-}
-
-function compass(v){
-  if(!valid(v))return "—";
-  return ["N","NE","E","SE","S","SW","W","NW"][Math.round(v/45)%8];
-}
-
-function level(v){
-  return valid(v)?v.toFixed(2)+" m":"—";
-}
-
-function timeLabel(t){
-  if(!t)return "—";
-  const d=new Date(t);
-  return Number.isNaN(d.getTime())?t:
-    d.toLocaleString("en-US",{weekday:"short",hour:"numeric"});
-}
-
-function metric(label,value,note){
-  return `<div class="card metric">
-    <div class="eyebrow">${label}</div>
-    <div class="big">${value}</div>
-    <div class="tiny">${note}</div>
-  </div>`;
-}
-
-function toast(message){
-  $("toast").textContent=message;
-  $("toast").classList.add("show");
-  setTimeout(()=>$("toast").classList.remove("show"),2200);
-}
-
-function go(page){
-  activePage=page;
-  document.querySelectorAll(".page").forEach(el=>{
-    el.classList.toggle("active",el.id===page);
-  });
-  document.querySelectorAll("nav button").forEach(btn=>{
-    btn.classList.toggle("active",btn.dataset.go===page);
-  });
-  history.replaceState(null,"","#"+page);
-  window.scrollTo(0,0);
-
-  if(page==="explore"){
-    setTimeout(()=>{
-      initMap();
-      if(map)map.invalidateSize();
-    },100);
+const CONFIG = {
+  interval: "5min",
+  outputsize: 500,
+  startingCash: 10000,
+  riskPercent: 1,
+  maxPositionPercent: 20,
+  commission: 0,
+  slippagePercent: 0.1,
+  weights: {
+    trend: 0.25,
+    momentum: 0.20,
+    macd: 0.15,
+    rsi: 0.15,
+    volume: 0.10,
+    volatility: 0.10,
+    structure: 0.05
   }
+};
 
-  if(page==="forecast")drawAll();
-  if(page==="favorites")renderSaved();
+// ---------- UTILITIES ----------
+
+function average(values) {
+  if (!values.length) return 0;
+  return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
-function spotCard(s){
-  const saved=favorites.includes(s.id);
-  return `<div class="card feature">
-    <div>
-      <div class="eyebrow">${s.region}</div>
-      <strong>${s.name}</strong>
-      <div class="tiny">${s.lat.toFixed(3)}°, ${s.lon.toFixed(3)}°</div>
-    </div>
-    <div class="bottom">
-      <button class="btn small" data-select="${s.id}">Forecast ↗</button>
-      <button class="btn alt small" data-favorite="${s.id}">${saved?"★":"☆"}</button>
-    </div>
-  </div>`;
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
-function renderSpots(){
-  const q=$("search").value.trim().toLowerCase();
-  const region=$("region").value;
+function last(values) {
+  return values[values.length - 1];
+}
 
-  const list=SPOTS.filter(s=>
-    (region==="all"||s.region===region)&&
-    (s.name.toLowerCase().includes(q)||s.region.toLowerCase().includes(q))
+function round(value, decimals = 2) {
+  return Number(value.toFixed(decimals));
+}
+
+function percentChange(current, previous) {
+  if (!previous) return 0;
+  return ((current - previous) / previous) * 100;
+}
+
+function standardDeviation(values) {
+  const mean = average(values);
+  const variance = average(
+    values.map(v => Math.pow(v - mean, 2))
   );
-
-  $("spotGrid").innerHTML=list.map(spotCard).join("")||
-    '<div class="card pad">No matching spots.</div>';
-
-  $("count").textContent=list.length+" spots";
-  updateMarkers(list);
+  return Math.sqrt(variance);
 }
 
-function renderSaved(){
-  const list=SPOTS.filter(s=>favorites.includes(s.id));
-  $("savedList").innerHTML=list.length
-    ?list.map(s=>`<div class="savedrow">
-      <div><strong>${s.name}</strong><div class="tiny">${s.region}</div></div>
-      <div class="actions">
-        <button class="btn small" data-select="${s.id}">Forecast →</button>
-        <button class="btn alt small" data-favorite="${s.id}">★</button>
-      </div>
-    </div>`).join("")
-    :'<div class="muted">No saved spots yet. Explore the coastline and tap ☆.</div>';
-}
+// ---------- TECHNICAL INDICATORS ----------
 
-function toggleFavorite(id){
-  if(favorites.includes(id)){
-    favorites=favorites.filter(x=>x!==id);
-    toast("Removed from favorites");
-  }else{
-    favorites.push(id);
-    toast("Saved to favorites");
-  }
+function calculateEMA(values, period) {
+  if (!values.length) return [];
 
-  localStorage.setItem("swellFavorites",JSON.stringify(favorites));
-  render();
-  renderSpots();
-  renderSaved();
-}
+  const multiplier = 2 / (period + 1);
+  let previous = values[0];
 
-function selectSpot(id){
-  selected=SPOTS[id]||selected;
-  localStorage.setItem("swellSelectedSpot",JSON.stringify(selected.id));
-  data=null;
-  requestId++;
-  render();
-  go("forecast");
-  load();
-}
+  return values.map((price, index) => {
+    if (index === 0) return previous;
 
-function initMap(){
-  if(map)return;
-  if(typeof L==="undefined"){
-    $("map").textContent="Map library unavailable. Use the directory below.";
-    return;
-  }
+    previous =
+      price * multiplier +
+      previous * (1 - multiplier);
 
-  map=L.map("map",{scrollWheelZoom:false}).setView([34,-119.5],6);
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
-    maxZoom:18,
-    attribution:"© OpenStreetMap contributors"
-  }).addTo(map);
-
-  renderSpots();
-}
-
-function updateMarkers(list){
-  if(!map)return;
-
-  markers.forEach(m=>map.removeLayer(m));
-  markers=[];
-
-  list.forEach(s=>{
-    const m=L.circleMarker([s.lat,s.lon],{
-      radius:7,
-      color:"#fff",
-      weight:2,
-      fillColor:"#161819",
-      fillOpacity:1
-    }).addTo(map);
-
-    const el=document.createElement("div");
-    const title=document.createElement("strong");
-    title.textContent=s.name;
-
-    const button=document.createElement("button");
-    button.textContent="View forecast →";
-    button.style.cssText="display:block;margin-top:10px;padding:8px;background:#111;color:#fff;border:0;border-radius:7px";
-    button.onclick=()=>selectSpot(s.id);
-
-    el.append(title,button);
-    m.bindPopup(el);
-    markers.push(m);
+    return previous;
   });
+}
 
-  if(list.length&&list.length<SPOTS.length){
-    map.fitBounds(
-      L.latLngBounds(list.map(s=>[s.lat,s.lon])).pad(.15),
-      {maxZoom:10}
+function calculateSMA(values, period) {
+  return values.map((_, index) => {
+    if (index + 1 < period) return null;
+    return average(
+      values.slice(index + 1 - period, index + 1)
     );
-  }
-}
-
-async function getJSON(url){
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),18000);
-
-  try{
-    const response=await fetch(url,{signal:controller.signal});
-    if(!response.ok)throw Error("HTTP "+response.status);
-
-    const json=await response.json();
-    if(json.error)throw Error(json.reason||"API error");
-
-    return json;
-  }finally{
-    clearTimeout(timer);
-  }
-}
-
-function api(base,spot,params){
-  const url=new URL(base);
-  url.searchParams.set("latitude",spot.lat);
-  url.searchParams.set("longitude",spot.lon);
-  url.searchParams.set("timezone","auto");
-  url.searchParams.set("forecast_days","7");
-
-  Object.entries(params).forEach(([key,value])=>{
-    url.searchParams.set(key,value);
   });
-
-  return url.toString();
 }
 
-async function load(){
-  const id=++requestId;
-  const spot={...selected};
+function calculateRSI(values, period = 14) {
+  if (values.length < period + 1) return 50;
 
-  $("forecastStatus").textContent="Requesting marine and weather models...";
-  $("refreshBtn").disabled=true;
+  let gains = 0;
+  let losses = 0;
 
-  const marine=api(
-    "https://marine-api.open-meteo.com/v1/marine",
-    spot,
-    {
-      current:[
-        "wave_height",
-        "wave_period",
-        "wave_direction",
-        "swell_wave_height",
-        "swell_wave_period",
-        "swell_wave_direction",
-        "sea_surface_temperature"
-      ].join(","),
-      hourly:[
-        "wave_height",
-        "wave_period",
-        "wave_direction",
-        "swell_wave_height",
-        "swell_wave_period",
-        "swell_wave_direction",
-        "secondary_swell_wave_height",
-        "secondary_swell_wave_period",
-        "secondary_swell_wave_direction",
-        "sea_surface_temperature",
-        "sea_level_height_msl"
-      ].join(",")
-    }
+  for (let i = values.length - period; i < values.length; i++) {
+    const change = values[i] - values[i - 1];
+
+    if (change > 0) gains += change;
+    else losses -= change;
+  }
+
+  if (losses === 0) return gains === 0 ? 50 : 100;
+
+  const relativeStrength = gains / losses;
+
+  return 100 - 100 / (1 + relativeStrength);
+}
+
+function calculateMACD(values) {
+  const fast = calculateEMA(values, 12);
+  const slow = calculateEMA(values, 26);
+
+  const macdLine = fast.map(
+    (value, index) => value - slow[index]
   );
 
-  const weather=api(
-    "https://api.open-meteo.com/v1/forecast",
-    spot,
-    {
-      current:[
-        "temperature_2m",
-        "apparent_temperature",
-        "wind_speed_10m",
-        "wind_direction_10m",
-        "wind_gusts_10m",
-        "relative_humidity_2m",
-        "surface_pressure",
-        "cloud_cover",
-        "precipitation"
-      ].join(","),
-      hourly:[
-        "wind_speed_10m",
-        "wind_direction_10m",
-        "wind_gusts_10m",
-        "temperature_2m",
-        "relative_humidity_2m"
-      ].join(","),
-      daily:"sunrise,sunset",
-      wind_speed_unit:"kmh"
-    }
-  );
-
-  const results=await Promise.allSettled([
-    getJSON(marine),
-    getJSON(weather)
-  ]);
-
-  if(id!==requestId)return;
-
-  data={
-    marine:results[0].status==="fulfilled"?results[0].value:null,
-    weather:results[1].status==="fulfilled"?results[1].value:null,
-    errors:results.filter(r=>r.status==="rejected")
-      .map(r=>r.reason?.message||"Unavailable")
-  };
-
-  lastFetch=Date.now();
-  $("refreshBtn").disabled=false;
-  render();
-}
-
-function at(hourly,key,time){
-  const index=hourly?.time?.indexOf(time)??-1;
-  return index<0?null:hourly[key]?.[index]??null;
-}
-
-function render(){
-  const m=data?.marine?.current||{};
-  const w=data?.weather?.current||{};
-  const d=data?.weather?.daily||{};
-  const mh=data?.marine?.hourly||{};
-
-  $("homeName").textContent=selected.name;
-  $("forecastName").textContent=selected.name;
-  $("forecastRegion").textContent=selected.region;
-  $("saveBtn").textContent=favorites.includes(selected.id)?"★ Saved":"☆ Save";
-
-  $("featured").innerHTML=[0,1,7,12,26,34]
-    .map(i=>spotCard(SPOTS[i])).join("");
-
-  const basics=[
-    metric("Wave height",wave(m.wave_height),"Significant model height"),
-    metric("Wave period",period(m.wave_period),"Wave timing"),
-    metric("Wind speed",wind(w.wind_speed_10m),compass(w.wind_direction_10m)+" wind"),
-    metric("Water temperature",temp(m.sea_surface_temperature),"Sea surface")
-  ].join("");
-
-  $("homeMetrics").innerHTML=basics;
-  $("mainMetrics").innerHTML=basics;
-
-  const latest=mh.time?.[0]||null;
-
-  $("detailMetrics").innerHTML=[
-    metric("Primary swell",wave(m.swell_wave_height),"Swell height"),
-    metric("Primary period",period(m.swell_wave_period),"Seconds"),
-    metric("Primary direction",direction(m.swell_wave_direction),compass(m.swell_wave_direction)),
-    metric("Wave direction",direction(m.wave_direction),compass(m.wave_direction)),
-    metric("Secondary swell",wave(at(mh,"secondary_swell_wave_height",latest)),"Additional component"),
-    metric("Secondary period",period(at(mh,"secondary_swell_wave_period",latest)),"Seconds"),
-    metric("Secondary direction",direction(at(mh,"secondary_swell_wave_direction",latest)),"Degrees"),
-    metric("Air temperature",temp(w.temperature_2m),"2 m air"),
-    metric("Feels like",temp(w.apparent_temperature),"Apparent temperature"),
-    metric("Wind gusts",wind(w.wind_gusts_10m),"10 m gusts"),
-    metric("Wind direction",direction(w.wind_direction_10m),compass(w.wind_direction_10m)),
-    metric("Humidity",valid(w.relative_humidity_2m)?Math.round(w.relative_humidity_2m)+"%":"—","Relative humidity"),
-    metric("Pressure",valid(w.surface_pressure)?Math.round(w.surface_pressure)+" hPa":"—","Surface pressure"),
-    metric("Cloud cover",valid(w.cloud_cover)?Math.round(w.cloud_cover)+"%":"—","Sky coverage"),
-    metric("Sunrise",timeLabel(d.sunrise?.[0]),"Local time"),
-    metric("Sunset",timeLabel(d.sunset?.[0]),"Local time")
-  ].join("");
-
-  $("forecastStatus").textContent=data
-    ?"Checked "+new Date(lastFetch).toLocaleTimeString()+
-    " · Marine "+(data.marine?"available":"unavailable")+
-    " · Weather "+(data.weather?"available":"unavailable")+
-    (data.errors.length?" · "+data.errors.join("; "):"")
-    :"Waiting for forecast data...";
-
-  renderHourly();
-  if(activePage==="forecast")drawAll();
-}
-
-function renderHourly(){
-  const m=data?.marine?.hourly;
-  const w=data?.weather?.hourly;
-
-  const times=m?.time||w?.time||[];
-  const start=Math.max(0,times.findIndex(t=>
-    new Date(t).getTime()>=Date.now()-3600000
-  ));
-
-  const rows=times.slice(start,start+72).map(t=>`
-    <tr>
-      <td>${timeLabel(t)}</td>
-      <td>${wave(at(m,"wave_height",t))}</td>
-      <td>${period(at(m,"wave_period",t))}</td>
-      <td>${wave(at(m,"swell_wave_height",t))}</td>
-      <td>${wave(at(m,"secondary_swell_wave_height",t))}</td>
-      <td>${temp(at(m,"sea_surface_temperature",t))}</td>
-      <td>${wind(at(w,"wind_speed_10m",t))}</td>
-      <td>${wind(at(w,"wind_gusts_10m",t))}</td>
-      <td>${level(at(m,"sea_level_height_msl",t))}</td>
-    </tr>
-  `);
-
-  $("hourlyRows").innerHTML=rows.join("")||
-    '<tr><td colspan="9">Hourly forecast unavailable.</td></tr>';
-}
-
-/* INTERACTIVE CANVAS CHARTS */
-
-function series(kind){
-  const m=data?.marine?.hourly;
-  const w=data?.weather?.hourly;
-
-  if(kind==="wave")return {
-    times:m?.time||[],
-    values:m?.wave_height||[],
-    format:wave,
-    convert:v=>units==="us"?v*3.28084:v
-  };
-
-  if(kind==="tide")return {
-    times:m?.time||[],
-    values:m?.sea_level_height_msl||[],
-    format:level,
-    convert:v=>v
-  };
-
-  if(kind==="wind")return {
-    times:w?.time||[],
-    values:w?.wind_speed_10m||[],
-    format:wind,
-    convert:v=>units==="us"?v/1.609344:v
-  };
+  const signalLine = calculateEMA(macdLine, 9);
 
   return {
-    times:m?.time||[],
-    values:m?.sea_surface_temperature||[],
-    format:temp,
-    convert:v=>units==="us"?v*9/5+32:v
+    macd: last(macdLine),
+    signal: last(signalLine),
+    histogram: last(macdLine) - last(signalLine)
   };
 }
 
-function drawAll(){
-  ["wave","tide","wind","water"].forEach(drawChart);
+function calculateATR(candles, period = 14) {
+  const trueRanges = [];
+
+  for (let i = 1; i < candles.length; i++) {
+    const current = candles[i];
+    const previous = candles[i - 1];
+
+    const range = Math.max(
+      current.high - current.low,
+      Math.abs(current.high - previous.close),
+      Math.abs(current.low - previous.close)
+    );
+
+    trueRanges.push(range);
+  }
+
+  return average(trueRanges.slice(-period));
 }
 
-function drawChart(kind){
-  const s=series(kind);
-  const canvas=$(kind+"Plot");
-  const view=$(kind+"View");
-  const slider=$(kind+"Slider");
-  const readout=$(kind+"Readout");
+function calculateBollingerBands(values, period = 20) {
+  const recent = values.slice(-period);
+  const middle = average(recent);
+  const deviation = standardDeviation(recent);
 
-  if(!canvas)return;
+  return {
+    upper: middle + deviation * 2,
+    middle,
+    lower: middle - deviation * 2
+  };
+}
 
-  const n=s.times.length;
-  const step=32;
-  const left=52;
-  const right=25;
-  const top=20;
-  const bottom=40;
-  const height=250;
+function calculateMomentum(values, bars) {
+  if (values.length <= bars) return 0;
 
-  const width=Math.max(
-    view.clientWidth-2,
-    left+right+Math.max(1,n-1)*step
+  return percentChange(
+    last(values),
+    values[values.length - 1 - bars]
   );
+}
 
-  const dpr=window.devicePixelRatio||1;
+function calculateRelativeVolume(candles) {
+  const volumes = candles.map(c => c.volume);
 
-  canvas.style.width=width+"px";
-  canvas.style.height=height+"px";
-  canvas.width=Math.round(width*dpr);
-  canvas.height=Math.round(height*dpr);
+  const recent = average(volumes.slice(-5));
+  const baseline = average(volumes.slice(-50, -5));
 
-  const ctx=canvas.getContext("2d");
-  ctx.scale(dpr,dpr);
+  return baseline > 0 ? recent / baseline : 1;
+}
 
-  const css=getComputedStyle(document.body);
-  const ink=css.getPropertyValue("--ink").trim();
-  const muted=css.getPropertyValue("--muted").trim();
-  const line=css.getPropertyValue("--line").trim();
+// ---------- MARKET DATA ----------
 
-  ctx.clearRect(0,0,width,height);
-  ctx.font="11px DM Sans, sans-serif";
-  ctx.textBaseline="middle";
+async function fetchMarketData(symbol) {
+  const url =
+    API +
+    "/timeseries?symbol=" +
+    encodeURIComponent(symbol) +
+    "&interval=" +
+    CONFIG.interval +
+    "&outputsize=" +
+    CONFIG.outputsize;
 
-  const available=s.values
-    .filter(valid)
-    .map(s.convert);
-
-  slider.max=Math.max(0,n-1);
-
-  if(!available.length){
-    ctx.fillStyle=muted;
-    ctx.fillText("Forecast data unavailable for this chart.",25,110);
-    readout.textContent="No model values available";
-    return;
-  }
-
-  let min=Math.min(...available);
-  let max=Math.max(...available);
-  const padding=(max-min||1)*.2;
-
-  min-=padding;
-  max+=padding;
-
-  if(kind==="wave"||kind==="wind"){
-    min=Math.max(0,min);
-  }
-
-  const chartHeight=height-top-bottom;
-  const x=i=>left+i*step;
-  const y=v=>top+(max-v)/(max-min)*chartHeight;
-
-  for(let k=0;k<=4;k++){
-    const value=min+(max-min)*k/4;
-    const yy=y(value);
-
-    ctx.strokeStyle=line;
-    ctx.lineWidth=1;
-    ctx.beginPath();
-    ctx.moveTo(left,yy);
-    ctx.lineTo(width-right,yy);
-    ctx.stroke();
-
-    ctx.fillStyle=muted;
-    ctx.textAlign="right";
-    ctx.fillText(value.toFixed(1),left-8,yy);
-  }
-
-  ctx.textAlign="center";
-
-  for(let i=0;i<n;i+=5){
-    ctx.fillStyle=muted;
-    ctx.fillText(timeLabel(s.times[i]),x(i),height-15);
-  }
-
-  ctx.strokeStyle=ink;
-  ctx.lineWidth=2.5;
-  ctx.lineJoin="round";
-  ctx.beginPath();
-
-  let drawing=false;
-
-  s.values.forEach((raw,i)=>{
-    if(!valid(raw)){
-      drawing=false;
-      return;
-    }
-
-    const value=s.convert(raw);
-
-    if(!drawing)ctx.moveTo(x(i),y(value));
-    else ctx.lineTo(x(i),y(value));
-
-    drawing=true;
+  const response = await fetch(url, {
+    cache: "no-store"
   });
 
-  ctx.stroke();
+  if (!response.ok) {
+    throw new Error(
+      symbol + ": HTTP " + response.status
+    );
+  }
 
-  const index=Math.min(
-    n-1,
-    Math.max(0,Number(slider.value)||0)
+  const data = await response.json();
+
+  if (data.error) {
+    throw new Error(data.details || data.error);
+  }
+
+  if (!Array.isArray(data.candles)) {
+    throw new Error("Missing candle data");
+  }
+
+  const candles = data.candles.map(c => ({
+    open: Number(c.open),
+    high: Number(c.high),
+    low: Number(c.low),
+    close: Number(c.close),
+    volume: Number(c.volume) || 0,
+    datetime: c.datetime
+  }));
+
+  if (candles.length < 50) {
+    throw new Error("Insufficient market history");
+  }
+
+  return candles;
+}
+
+// ---------- FEATURE EXTRACTION ----------
+
+function extractFeatures(symbol, candles) {
+  const closes = candles.map(c => c.close);
+
+  const price = last(closes);
+
+  const ema9 = last(calculateEMA(closes, 9));
+  const ema20 = last(calculateEMA(closes, 20));
+  const ema50 = last(calculateEMA(closes, 50));
+
+  const rsi = calculateRSI(closes);
+  const macd = calculateMACD(closes);
+  const atr = calculateATR(candles);
+  const bands = calculateBollingerBands(closes);
+
+  const relativeVolume =
+    calculateRelativeVolume(candles);
+
+  const momentum15 = calculateMomentum(closes, 3);
+  const momentum30 = calculateMomentum(closes, 6);
+  const momentum60 = calculateMomentum(closes, 12);
+
+  const recent = candles.slice(-20);
+
+  const resistance = Math.max(
+    ...recent.map(c => c.high)
   );
 
-  const raw=s.values[index];
-  const value=valid(raw)?s.convert(raw):null;
+  const support = Math.min(
+    ...recent.map(c => c.low)
+  );
 
-  ctx.strokeStyle=muted;
-  ctx.lineWidth=1;
-  ctx.setLineDash([5,5]);
-  ctx.beginPath();
-  ctx.moveTo(x(index),top);
-  ctx.lineTo(x(index),height-bottom);
-  ctx.stroke();
-  ctx.setLineDash([]);
+  const rangePosition =
+    resistance === support
+      ? 50
+      : ((price - support) /
+          (resistance - support)) * 100;
 
-  if(valid(value)){
-    ctx.fillStyle=ink;
-    ctx.beginPath();
-    ctx.arc(x(index),y(value),5,0,Math.PI*2);
-    ctx.fill();
-  }
+  const atrPercent = (atr / price) * 100;
 
-  readout.innerHTML=`
-    <span>${timeLabel(s.times[index])}</span>
-    <strong>${s.format(raw)}</strong>
-  `;
-
-  canvas.onpointermove=e=>{
-    if(e.pointerType!=="mouse"&&!e.buttons)return;
-
-    const rect=canvas.getBoundingClientRect();
-    const i=Math.round((e.clientX-rect.left-left)/step);
-
-    slider.value=Math.max(0,Math.min(n-1,i));
-    drawChart(kind);
-  };
-
-  canvas.onclick=e=>{
-    const rect=canvas.getBoundingClientRect();
-    slider.value=Math.max(
-      0,
-      Math.min(n-1,Math.round((e.clientX-rect.left-left)/step))
-    );
-    drawChart(kind);
-  };
-
-  slider.oninput=()=>{
-    drawChart(kind);
-    const target=x(Number(slider.value))-view.clientWidth/2;
-    view.scrollLeft=target;
+  return {
+    symbol,
+    candles,
+    price,
+    ema9,
+    ema20,
+    ema50,
+    rsi,
+    macd,
+    atr,
+    atrPercent,
+    bands,
+    relativeVolume,
+    momentum15,
+    momentum30,
+    momentum60,
+    support,
+    resistance,
+    rangePosition
   };
 }
 
-/* EVENTS */
+// ---------- MARKET REGIME ----------
 
-document.addEventListener("click",e=>{
-  const nav=e.target.closest("[data-go]");
-  if(nav)go(nav.dataset.go);
-
-  const spot=e.target.closest("[data-select]");
-  if(spot)selectSpot(Number(spot.dataset.select));
-
-  const favorite=e.target.closest("[data-favorite]");
-  if(favorite)toggleFavorite(Number(favorite.dataset.favorite));
-
-  const scroll=e.target.closest("[data-scroll]");
-  if(scroll){
-    const [kind,direction]=scroll.dataset.scroll.split(":");
-    const view=$(kind+"View");
-    view.scrollBy({
-      left:Number(direction)*view.clientWidth*.7,
-      behavior:"smooth"
-    });
+function detectMarketRegime(f) {
+  if (
+    f.price > f.ema9 &&
+    f.ema9 > f.ema20 &&
+    f.ema20 > f.ema50
+  ) {
+    return "BULLISH TREND";
   }
-});
 
-$("search").addEventListener("input",renderSpots);
-$("region").addEventListener("change",renderSpots);
+  if (
+    f.price < f.ema9 &&
+    f.ema9 < f.ema20 &&
+    f.ema20 < f.ema50
+  ) {
+    return "BEARISH TREND";
+  }
 
-$("saveBtn").addEventListener("click",()=>{
-  toggleFavorite(selected.id);
-});
+  if (f.atrPercent > 3) {
+    return "HIGH VOLATILITY";
+  }
 
-$("refreshBtn").addEventListener("click",()=>{
-  load();
-});
-
-function applyTheme(){
-  document.body.classList.toggle("dark",theme==="dark");
-  $("themeSelect").value=theme;
-  localStorage.setItem("swellTheme",theme);
-  drawAll();
+  return "MIXED / SIDEWAYS";
 }
 
-$("themeBtn").addEventListener("click",()=>{
-  theme=theme==="light"?"dark":"light";
-  applyTheme();
-});
+// ---------- QUANT SCORING ENGINE ----------
 
-$("themeSelect").addEventListener("change",e=>{
-  theme=e.target.value;
-  applyTheme();
-});
+function calculateScores(f) {
+  const trend =
+    (f.price > f.ema9 ? 30 : 0) +
+    (f.ema9 > f.ema20 ? 35 : 0) +
+    (f.ema20 > f.ema50 ? 35 : 0);
 
-$("unitSelect").addEventListener("change",e=>{
-  units=e.target.value;
-  localStorage.setItem("swellUnits",units);
-  render();
-});
+  const momentum = clamp(
+    50 +
+    f.momentum15 * 8 +
+    f.momentum30 * 4 +
+    f.momentum60 * 2,
+    0, 100
+  );
 
-window.addEventListener("resize",()=>{
-  if(activePage==="forecast")drawAll();
-});
+  const macd = clamp(
+    50 +
+    (f.macd.histogram / f.price) * 3000,
+    0, 100
+  );
 
-document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden&&Date.now()-lastFetch>20*60*1000){
-    load();
+  const rsi = clamp(
+    100 - Math.abs(f.rsi - 57) * 2.2,
+    0, 100
+  );
+
+  const volume = clamp(
+    45 + (f.relativeVolume - 1) * 40,
+    0, 100
+  );
+
+  const volatility = clamp(
+    90 - Math.max(0, f.atrPercent - 1.2) * 25,
+    0, 100
+  );
+
+  const structure = clamp(
+    f.rangePosition,
+    0, 100
+  );
+
+  const parts = {
+    trend,
+    momentum,
+    macd,
+    rsi,
+    volume,
+    volatility,
+    structure
+  };
+
+  let total = 0;
+
+  for (const key in CONFIG.weights) {
+    total += parts[key] * CONFIG.weights[key];
   }
+
+  return {
+    total: Math.round(clamp(total, 0, 100)),
+    parts
+  };
+}
+
+// ---------- SIGNAL EXPLANATION ----------
+
+function generateExplanation(f, score) {
+  const reasons = [];
+
+  if (f.ema9 > f.ema20) {
+    reasons.push("Short-term EMA trend is positive");
+  } else {
+    reasons.push("Short-term EMA trend is weak");
+  }
+
+  if (f.macd.histogram > 0) {
+    reasons.push("MACD momentum is positive");
+  } else {
+    reasons.push("MACD momentum is negative");
+  }
+
+  if (f.rsi > 70) {
+    reasons.push("RSI indicates overbought conditions");
+  } else if (f.rsi < 30) {
+    reasons.push("RSI indicates oversold conditions");
+  } else {
+    reasons.push("RSI is within its middle range");
+  }
+
+  if (f.relativeVolume > 1.5) {
+    reasons.push("Trading volume is elevated");
+  }
+
+  if (f.atrPercent > 3) {
+    reasons.push("Price volatility is elevated");
+  }
+
+  return {
+    classification:
+      score >= 80 ? "STRONG TECHNICAL SCORE" :
+      score >= 65 ? "POSITIVE TECHNICAL SCORE" :
+      score >= 50 ? "MIXED TECHNICAL SCORE" :
+      "WEAK TECHNICAL SCORE",
+    reasons
+  };
+}
+
+// ---------- PAPER TRADING RISK ENGINE ----------
+
+function calculatePaperTrade(f) {
+  const entry = f.price;
+
+  const invalidation = Math.max(
+    0,
+    Math.min(
+      entry - f.atr * 1.35,
+      f.support - f.atr * 0.25
+    )
+  );
+
+  const riskPerShare = entry - invalidation;
+
+  const accountRisk =
+    CONFIG.startingCash *
+    (CONFIG.riskPercent / 100);
+
+  const maxPositionValue =
+    CONFIG.startingCash *
+    (CONFIG.maxPositionPercent / 100);
+
+  const sharesByRisk =
+    riskPerShare > 0
+      ? Math.floor(accountRisk / riskPerShare)
+      : 0;
+
+  const sharesByCapital =
+    Math.floor(maxPositionValue / entry);
+
+  const shares = Math.max(
+    0,
+    Math.min(sharesByRisk, sharesByCapital)
+  );
+
+  const targets = {
+    oneR: entry + riskPerShare,
+    twoR: entry + riskPerShare * 2,
+    threeR: entry + riskPerShare * 3
+  };
+
+  const positionValue = shares * entry;
+
+  return {
+    entry: round(entry),
+    invalidation: round(invalidation),
+    riskPerShare: round(riskPerShare),
+    shares,
+    positionValue: round(positionValue),
+    maximumPlannedRisk: round(
+      shares * riskPerShare
+    ),
+    targets: {
+      oneR: round(targets.oneR),
+      twoR: round(targets.twoR),
+      threeR: round(targets.threeR)
+    }
+  };
+}
+
+// ---------- FULL ANALYSIS ----------
+
+function analyzeStock(symbol, candles) {
+  const features = extractFeatures(symbol, candles);
+
+  const regime = detectMarketRegime(features);
+  const scoring = calculateScores(features);
+
+  const explanation = generateExplanation(
+    features,
+    scoring.total
+  );
+
+  const paperTrade = calculatePaperTrade(features);
+
+  return {
+    symbol,
+    price: round(features.price),
+    score: scoring.total,
+    regime,
+    classification: explanation.classification,
+    reasons: explanation.reasons,
+    indicators: {
+      ema9: round(features.ema9),
+      ema20: round(features.ema20),
+      ema50: round(features.ema50),
+      rsi: round(features.rsi),
+      macd: round(features.macd.macd, 4),
+      macdSignal: round(features.macd.signal, 4),
+      macdHistogram: round(
+        features.macd.histogram, 4
+      ),
+      atr: round(features.atr),
+      atrPercent: round(features.atrPercent),
+      relativeVolume: round(features.relativeVolume),
+      momentum15: round(features.momentum15),
+      momentum30: round(features.momentum30),
+      momentum60: round(features.momentum60),
+      support: round(features.support),
+      resistance: round(features.resistance),
+      bollingerUpper: round(features.bands.upper),
+      bollingerLower: round(features.bands.lower)
+    },
+    scoreBreakdown: scoring.parts,
+    paperTrade
+  };
+}
+
+// ---------- SCAN WATCHLIST ----------
+
+async function scanWatchlist() {
+  const results = [];
+  const errors = [];
+
+  console.log("Starting TradeScan V4...");
+  console.log("Scanning", WATCHLIST.length, "stocks");
+
+  for (const symbol of WATCHLIST) {
+    try {
+      const candles = await fetchMarketData(symbol);
+
+      const analysis = analyzeStock(
+        symbol,
+        candles
+      );
+
+      results.push(analysis);
+
+      console.log(
+        symbol,
+        "Price:", analysis.price,
+        "Score:", analysis.score,
+        "Regime:", analysis.regime
+      );
+
+    } catch (error) {
+      errors.push({
+        symbol,
+        error: error.message
+      });
+
+      console.error(symbol, error.message);
+    }
+  }
+
+  results.sort((a, b) => b.score - a.score);
+
+  console.table(
+    results.map(stock => ({
+      Symbol: stock.symbol,
+      Price: stock.price,
+      Score: stock.score,
+      Regime: stock.regime
+    }))
+  );
+
+  console.log("Scan completed");
+  console.log("Successful:", results.length);
+  console.log("Errors:", errors.length);
+
+  return { results, errors };
+}
+
+// ---------- PAPER TRADE SIMULATION ----------
+
+function simulatePaperTrade(analysis, exitPrice) {
+  const trade = analysis.paperTrade;
+
+  const shares = trade.shares;
+
+  const entryCost =
+    trade.entry *
+    shares *
+    (1 + CONFIG.slippagePercent / 100);
+
+  const exitValue =
+    exitPrice *
+    shares *
+    (1 - CONFIG.slippagePercent / 100);
+
+  const profit =
+    exitValue -
+    entryCost -
+    CONFIG.commission * 2;
+
+  const returnPercent =
+    entryCost > 0
+      ? profit / entryCost * 100
+      : 0;
+
+  return {
+    symbol: analysis.symbol,
+    shares,
+    entry: trade.entry,
+    exit: exitPrice,
+    profit: round(profit),
+    returnPercent: round(returnPercent),
+    outcome:
+      profit > 0 ? "PROFIT" :
+      profit < 0 ? "LOSS" :
+      "BREAKEVEN"
+  };
+}
+
+// ---------- RUN SCANNER ----------
+
+scanWatchlist().then(scan => {
+  window.tradeScanResults = scan.results;
+  window.tradeScanErrors = scan.errors;
+
+  console.log(
+    "Results available at window.tradeScanResults"
+  );
 });
-
-/* START */
-
-$("unitSelect").value=units;
-applyTheme();
-renderSpots();
-renderSaved();
-render();
-
-const initial=location.hash.slice(1);
-go(["home","forecast","explore","favorites","settings"].includes(initial)
-  ?initial:"home");
-
-load();
-
-setInterval(()=>{
-  if(!document.hidden)load();
-},30*60*1000);
-</script>
-
-</body>
-</html>
